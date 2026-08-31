@@ -88,9 +88,16 @@ Both live in `src/encore/evaluate.py`:
 
 ## Non-negotiables (restated from `CLAUDE.md`)
 
-- **Money is integer paise everywhere.** A float representing an amount,
-  anywhere, is a bug. `format_rupees()` in `report.py` is the one and only
-  place a paise integer becomes a display string, and it happens last.
+- **Money is integer paise for every stored or transacted amount.** A float
+  representing a stored or transacted amount, anywhere, is a bug. Floats
+  appear only in derived reporting ratios and display formatting, never in
+  a value that's stored, compared by the wall, or sent to the rail:
+  `evaluate.py::run_matrix`'s `recovered_per_1000_failures_paise` /
+  `recovery_per_attempt_paise` (float division, rounded back to paise
+  before being written to `eval.json`) and `demo.py`'s operator-facing
+  `amount_paise / 100:.2f` print. `format_rupees()` in `report.py` is the
+  scoreboard's rupee formatter — integer `divmod`, no float — and converts
+  a paise integer to a display string last.
 - **`wall.py` stays pure.** No I/O, no clock, no randomness, no LLM call.
   Everything `decide()` needs comes in as a parameter. If a check needs a
   clock or a call, that's a sign it belongs in the caller, not the wall.

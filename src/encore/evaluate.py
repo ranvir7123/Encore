@@ -111,8 +111,19 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
                          if parse_fn(r.text).kind == "cancel"}
 
                 slug = f"{regime_name}__{policy.name}__s{seed}"
-                audit = AuditLog(out_dir / f"{slug}_audit.jsonl")
-                ledger = AttemptLedger(out_dir / f"{slug}_ledger.txt")
+                audit_path = out_dir / f"{slug}_audit.jsonl"
+                ledger_path = out_dir / f"{slug}_ledger.txt"
+                # Fresh-run semantics: append-only applies WITHIN a run, not across
+                # runs -- runs/ is regenerable scratch (AGENTS.md), so a rerun into
+                # the same out_dir must not see the previous run's audit/ledger
+                # files. Without this, a second `encore eval` into the same
+                # out_dir hits duplicate_blocked on every attempt (the ledger
+                # already has every attempt_id) and silently reports near-zero
+                # recovery with no warning.
+                audit_path.unlink(missing_ok=True)
+                ledger_path.unlink(missing_ok=True)
+                audit = AuditLog(audit_path)
+                ledger = AttemptLedger(ledger_path)
                 sched = Scheduler(wall_cfg)
                 result = sched.run(p, failures, policy, SimulatedRail(p), audit, ledger,
                                    killed_customers=killed)

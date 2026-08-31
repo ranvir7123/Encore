@@ -63,8 +63,10 @@ def test_render_contains_parked_revenue_line():
 
 def test_render_never_crashes_without_audit_sample():
     html = render(FIXTURE_EVAL)
-    assert "encore eval" in html.lower() or "run `encore eval`" in html.lower() \
-        or "audit" in html.lower()
+    # The section heading always contains "audit", so that alone proves
+    # nothing -- assert the actual missing-audit placeholder marker
+    # (report.py::_audit_trail_section's audit_sample=None branch).
+    assert 'id="audit-trail-missing"' in html
 
 
 def test_render_includes_audit_sample_when_given():

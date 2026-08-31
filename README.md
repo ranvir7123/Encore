@@ -95,16 +95,21 @@ uv run encore report
 
 `uv run encore eval` runs the full regime × policy matrix and writes
 `runs/eval.json`; `uv run encore report` reads that file and writes
-`runs/scoreboard.html` (the source of the table in section 2). To see the
-real Razorpay test-mode rail exercised end to end without touching the
-network or spending a real `reference_id`, run:
+`runs/scoreboard.html` (the source of the table in section 2). Bulk metrics
+come from the simulator; the demo slice proves the rail integration is
+real. To see the real Razorpay test-mode rail exercised end to end without
+touching the network or spending a real `reference_id`, run:
 
 ```bash
 uv run encore demo --dry-run
 ```
 
-which runs the same scheduler/wall/audit path against `SimulatedRail`
-instead of the live Razorpay client.
+`encore demo` routes each planned action through the same `wall.decide()`
+check and kill set `encore eval`'s scheduler uses — a killed customer or a
+wall-denied action never reaches link creation, only prints why and moves
+on. `--dry-run` runs that identical path against `SimulatedRail` instead of
+the live Razorpay client, so it exercises the full wall/kill-set/audit
+logic with no network call and no real link.
 
 ## 5. Where we chose not to use AI
 
@@ -119,12 +124,21 @@ instead of the live Razorpay client.
   threshold. The model only ever picks *which hour*, inside a horizon the
   wall has already filtered to legal candidates; whether to *keep trying at
   all* is arithmetic.
-- **Money math is integer paise, always.** No float ever represents an
-  amount anywhere in the codebase — not in the simulator, not in the
-  scheduler, not in the scoreboard's rupee formatter
-  (`src/encore/report.py::format_rupees`), which only converts to a `₹`
-  string at the very last step, for display. An LLM producing a number that
-  becomes money is exactly the failure mode this project refuses to build.
+- **Money math is integer paise for every stored or transacted amount.** No
+  float ever touches a stored or transacted amount anywhere in the codebase
+  — not in the simulator, not in the scheduler, not in the ledger, not in
+  the rail call. Floats appear in exactly three places, all derived
+  reporting or display, never a value that gets stored, compared by the
+  wall, or sent to the rail: `evaluate.py::run_matrix`'s
+  `recovered_per_1000_failures_paise` and `recovery_per_attempt_paise`
+  (float division, rounded back to an integer paise count before it's
+  written to `eval.json`), and `demo.py`'s operator-facing print of
+  `amount_paise / 100:.2f` (display only, immediately discarded, never
+  stored or compared). The scoreboard's rupee formatter
+  (`src/encore/report.py::format_rupees`) stays float-free — integer
+  `divmod`, no float at all — converting a paise integer to a `₹` string at
+  the very last step. An LLM producing a number that becomes money is
+  exactly the failure mode this project refuses to build.
 - **The reply parser defaults to keywords, not an LLM, on the money-adjacent
   path.** `parse_keyword` (regex over Hindi/Hinglish cancel and promise
   words) is the default `parse_fn` used by `encore eval`'s kill-set

@@ -58,7 +58,8 @@ def cmd_parse_eval(args: argparse.Namespace) -> None:
 def cmd_demo(args: argparse.Namespace) -> None:
     if not args.dry_run:
         load_dotenv()  # RazorpayClient reads RAZORPAY_KEY_ID/SECRET from the environment
-    run_demo_slice(n=args.n, timeout_s=args.timeout_s, dry_run=args.dry_run)
+    run_demo_slice(n=args.n, timeout_s=args.timeout_s, interval_s=args.interval_s,
+                   dry_run=args.dry_run)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -88,6 +89,8 @@ def build_parser() -> argparse.ArgumentParser:
     p_demo.add_argument("--n", type=int, default=3, help="number of soft-decline failures (default: 3)")
     p_demo.add_argument("--timeout", type=int, default=300, dest="timeout_s",
                         help="poll_until_terminal timeout in seconds (default: 300)")
+    p_demo.add_argument("--interval", type=int, default=5, dest="interval_s",
+                        help="poll interval in seconds (default: 5)")
     p_demo.add_argument("--dry-run", action="store_true",
                         help="exercise the full code path against SimulatedRail -- no network")
     p_demo.set_defaults(func=cmd_demo)

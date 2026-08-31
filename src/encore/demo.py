@@ -28,9 +28,11 @@ from encore.audit import AttemptLedger, AuditLog
 from encore.domain import ActionKind, ProposedAction, attempt_id
 from encore.evaluate import EVAL_SEED_FLOOR, REGIMES
 from encore.model import SOFT_CODES
+from encore.parser import parse_keyword
 from encore.razorpay_client import RazorpayClient, poll_until_terminal
 from encore.scheduler import SimulatedRail
 from encore.simulator import Portfolio
+from encore.wall import SequenceState, WallConfig, decide
 
 # Task 9/evaluate.py convention: TRAIN_SEEDS (1-5) are reserved for the
 # model's training data and must never leak into any other run. Rather than
@@ -111,6 +113,13 @@ def run_demo_slice(n: int = 3, timeout_s: int = 300, interval_s: int = 5,
         print(f"WARNING: seed {DEMO_SEED} regime {DEMO_REGIME} only produced "
               f"{len(failures)} soft-decline failure(s), fewer than the {n} requested.")
 
+    # Same kill-set construction as evaluate.py::run_matrix: a cancel reply
+    # always wins over any retry, built BEFORE scheduling, from this seed's
+    # own replies only.
+    killed = {r.customer_id for r in portfolio.reply_events()
+             if parse_keyword(r.text).kind == "cancel"}
+    wall_cfg = WallConfig()
+
     planned = []  # (failed, action, aid)
     actions: dict[str, ProposedAction] = {}
     for failed in failures:
@@ -145,6 +154,19 @@ def run_demo_slice(n: int = 3, timeout_s: int = 300, interval_s: int = 5,
         if ledger.already_executed(aid):
             print(f"[{i}] {aid}: already executed (ledger hit) -- skipping, no new link created.")
             audit.append({"event": "duplicate_blocked", "attempt_id": aid, "reference_id": aid})
+            continue
+        # Route through the same wall every scheduled attempt goes through --
+        # attempt_no=1, no prior attempt (matches the fresh SequenceState the
+        # scheduler builds for a never-before-seen failure); killed is the
+        # only thing that can differ per customer here.
+        state = SequenceState(failed.decline, 0, 0, None, failed.customer_id in killed)
+        decision = decide(action, state, wall_cfg)
+        audit.append({"event": "decision", "customer_id": action.customer_id,
+                      "attempt_id": aid, "kind": str(action.kind),
+                      "at_hour": action.execute_at_hour, "allowed": decision.allowed,
+                      "reason": decision.reason, "policy": "demo"})
+        if not decision.allowed:
+            print(f"[{i}] {aid}: wall denied ({decision.reason}) -- skipping, no link created.")
             continue
         description = f"Encore demo: {failed.customer_id} soft-decline retry ({aid})"
         link = client.create_payment_link(failed.amount_paise, description, aid)

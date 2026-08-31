@@ -4,10 +4,20 @@ until format_rupees() is called at the very last moment, right before a
 number is dropped into an HTML string.
 """
 import glob
+import html
 import json
 from pathlib import Path
 
 from encore.audit import AuditLog
+
+
+def _esc(value: object) -> str:
+    """Escape a dynamic (audit-log- or eval.json-derived) value before it is
+    interpolated into the HTML string -- these values ultimately trace back
+    to customer replies and simulator-generated ids, not to a fixed set of
+    strings this module controls.
+    """
+    return html.escape(str(value))
 
 
 def format_rupees(paise: int) -> str:
@@ -41,7 +51,7 @@ def _table_rows(eval_dict: dict) -> str:
         regime, policy = cell.split("/", 1)
         rows.append(
             "<tr>"
-            f"<td>{regime}</td><td>{policy}</td>"
+            f"<td>{_esc(regime)}</td><td>{_esc(policy)}</td>"
             f"<td>{format_rupees(metrics['recovered_per_1000_failures_paise'])}</td>"
             f"<td>{format_rupees(metrics['recovery_per_attempt_paise'])}</td>"
             f"<td>{metrics['max_contacts_per_customer']}</td>"
@@ -60,7 +70,7 @@ def _denial_breakdown(eval_dict: dict) -> str:
     if not totals:
         return "<p>No denials recorded.</p>"
     items = "\n".join(
-        f"<li>{reason}: {count}</li>" for reason, count in sorted(totals.items())
+        f"<li>{_esc(reason)}: {count}</li>" for reason, count in sorted(totals.items())
     )
     return f"<ul>{items}</ul>"
 
@@ -74,16 +84,16 @@ def _audit_trail_section(audit_sample: tuple[str, list[dict]] | None) -> str:
     customer_id, records = audit_sample
     rows = "\n".join(
         "<tr>"
-        f"<td>{r.get('event', '')}</td>"
-        f"<td>{r.get('at_hour', '')}</td>"
-        f"<td>{r.get('kind', r.get('outcome', ''))}</td>"
-        f"<td>{r.get('reason', r.get('original_decline', ''))}</td>"
-        f"<td>{r.get('attempt_id', '')}</td>"
+        f"<td>{_esc(r.get('event', ''))}</td>"
+        f"<td>{_esc(r.get('at_hour', ''))}</td>"
+        f"<td>{_esc(r.get('kind', r.get('outcome', '')))}</td>"
+        f"<td>{_esc(r.get('reason', r.get('original_decline', '')))}</td>"
+        f"<td>{_esc(r.get('attempt_id', ''))}</td>"
         "</tr>"
         for r in records
     )
     return (
-        f"<p>Sample customer: <code>{customer_id}</code></p>"
+        f"<p>Sample customer: <code>{_esc(customer_id)}</code></p>"
         "<table><thead><tr><th>event</th><th>at_hour</th><th>kind/outcome</th>"
         "<th>reason/decline</th><th>attempt_id</th></tr></thead>"
         f"<tbody>{rows}</tbody></table>"

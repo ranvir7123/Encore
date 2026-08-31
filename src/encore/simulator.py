@@ -135,6 +135,11 @@ class Portfolio:
                     code = self.debit(c.customer_id, h)
                     if code is not None:
                         failures.append(FailedDebit(c.customer_id, cycle_id, c.amount_paise, code, h))
+                        # Replies materialize here, tied to the failure itself, not
+                        # to any nudge actually being sent -- no shipped policy ever
+                        # proposes a NUDGE action. They exist purely to feed the kill
+                        # set (a "cancel" reply denies every further retry via the
+                        # wall), independent of whether anything nudged the customer.
                         if self.rng.random() < 0.3:  # a minority reply to the eventual nudge
                             tmpl = self.rng.choice(REPLY_TEMPLATES)
                             self._replies.append(ReplyEvent(

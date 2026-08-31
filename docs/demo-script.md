@@ -88,8 +88,9 @@ Open it in a browser and show:
   recovering ₹1,88,259.09 per 1000 failures in `r0_base` against
   `fixed_t123`'s ₹68,040.91 and `immediate_x3`'s ₹0.00, with
   `recovery_per_attempt_paise` favoring `encore_learned` in every regime.
-- The **violations row: `0` in every one of the 9 (regime, policy, seed)
-  cells.** Say explicitly: "zero violations, but that's a post-hoc replay
+- The **violations row: `0` in every one of the 9 regime x policy cells,
+  each aggregated over 3 seeds (27 runs).** Say explicitly: "zero
+  violations, but that's a post-hoc replay
   through the wall — it can't re-check cooldown from the audit log alone,
   because the log doesn't record a sequence's previous attempt hour. That
   caveat is in the README, not hidden."
@@ -174,6 +175,18 @@ case instead:
 
 from `runs/demo_audit.jsonl` — say: "that line was recorded by the exact
 same run, off-camera, so you don't have to watch four minutes of polling."
+
+**Post-final-review note:** `demo.py` now routes every planned action
+through the same `wall.decide()` check and kill set `evaluate.py`'s
+scheduler uses, evaluated *before* link creation (it did not do this when
+the line above was recorded). Re-checking seed `100`'s kill set today shows
+`cust_0417` has a `cancel` reply on file, so a rerun of the exact command
+above now denies `cust_0417` with `sequence_killed` before ever creating a
+link — the quoted line is real historical evidence from the original run,
+not something `--n 4` reproduces on current code. `cust_0092`'s success
+line is unaffected (not in the kill set) and still reproduces identically.
+If re-recording this beat, expect a `wall denied (sequence_killed) --
+skipping, no link created` line for `cust_0417` instead of a fourth link.
 
 ## Beat 6 — The honest close (4:35–4:55, 20s, 0s terminal)
 
