@@ -367,3 +367,69 @@ edited after the fact.
   `.superpowers/sdd/encore-build-plan/task-8-report.md` for the real
   command output.
 - **Still open:** nothing.
+
+### 2026-08-31 — Time-blind rail made retry timing unmeasurable — rail now consults balance history
+
+- **What happened:** The prior entry ("Task 10 eval matrix: encore_learned
+  ties, not beats, fixed_t123...") diagnosed an exact, bit-for-bit tie
+  between `encore_learned` and `fixed_t123` on total recovered money in
+  every regime and every seed, and attributed it to a structural property
+  of the simulator. The controller reviewed that diagnosis and ruled that
+  the true cause was narrower and fixable: `SimulatedRail.execute` →
+  `Portfolio.debit` always checked the *current* scalar
+  `c.balance_paise`, which by the time any retry executes (all retries
+  happen strictly after `run_cycle` has finished mutating every
+  customer's balance to its final, end-of-window value) is the same
+  end-of-cycle number regardless of which hour a retry actually lands
+  on. So which day/hour a policy chose to retry on could change *how many
+  attempts* it took, but never *whether* a customer was ultimately
+  recoverable — collapsing any timing-based policy difference on the
+  metric that matters (recovered money) down to zero. The plan's original
+  "per-failure processing is not a correctness issue" simplification note
+  (user-approved at the time) is deliberately reversed here on explicit
+  controller instruction: the rail's execution outcome must now depend on
+  the balance *as of the retry's actual hour*, exactly as `would_succeed`
+  (the labeling oracle) already does, not on final-state balance.
+- **Evidence:** `runs/eval.json` from the Task 10 real matrix run (pasted
+  verbatim in `.superpowers/sdd/encore-build-plan/task-10-report.md`) shows
+  `recovered_per_1000_failures_paise` identical between `fixed_t123` and
+  `encore_learned` in all three regimes: r0_base both `18825909`; r1_shifted
+  both `27981242`; r2_no_signal both `13668289`. A standalone diagnostic
+  script re-reading the raw per-seed audit JSONL files confirmed this was
+  not a rounding artifact — for all 9 (regime, seed) cells the two policies
+  recovered the **identical set of customers** for the **identical total
+  paise**, even though the specific attempt hours used were almost always
+  different (in `r1_shifted` seed 100, all 156 matched successful
+  customers used a different `at_hour` between the two policies, and only
+  5/156 even landed in the same day-bucket).
+- **Root cause:** `src/encore/simulator.py`'s `Portfolio.debit(customer_id,
+  at_hour)` read `c.balance_paise` — a single mutated scalar reflecting
+  whatever the balance happened to be at the moment `debit` is called
+  (i.e., end-of-`run_cycle` state for every eval retry, since retries are
+  scheduled and executed strictly after the failure-generating
+  `run_cycle` call returns) — regardless of the `at_hour` argument. Every
+  policy's retries, whichever hour they targeted, therefore all resolved
+  against the exact same final balance snapshot. `Portfolio.would_succeed`
+  had already solved this correctly (see the "Oracle labels were
+  time-invariant" entry above, `62467c0`) by consulting
+  `balance_history[day]` for `day = at_hour // HOURS_PER_DAY`; `debit`
+  was never brought in line with it, so the mechanical rail and the
+  labeling oracle diverged on exactly the axis ("does timing matter?")
+  the eval harness exists to measure.
+- **Fix:** User-directed reversal of the plan's "per-failure processing is
+  not a correctness issue" simplification. `Portfolio.debit` now looks up
+  the balance for `day = at_hour // HOURS_PER_DAY` from
+  `balance_history[customer_id]` when history exists and the day is in
+  range, falling back to the current live `c.balance_paise` only when
+  history is empty or the day is beyond what was recorded — mirroring
+  `would_succeed`'s pattern exactly, so `test_oracle_agrees_with_debit_on_success`'s
+  far-future hour-`999_999` query and `test_churn_intent_diverges_oracle_from_debit`'s
+  no-`run_cycle` (empty-history) case both still resolve through the same
+  fallback both functions already agreed on. The `revoked` and
+  `issuer_down_hours` checks, and the success-path deduction (which still
+  comes off the live scalar, not the historical snapshot — eval worlds
+  bill each customer at most once per run via `run_cycle(30, ...)`, so
+  there is no double-collection path where that scalar/history divergence
+  could matter), were left exactly as-is. `would_succeed`, `run_cycle`,
+  and every RNG call sequence were left untouched. Hash: `<TO BE FILLED>`.
+- **Still open:** nothing.

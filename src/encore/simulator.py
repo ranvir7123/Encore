@@ -108,8 +108,18 @@ class Portfolio:
             return DeclineCode.MANDATE_REVOKED
         if at_hour in self.issuer_down_hours:
             return DeclineCode.ISSUER_DOWN
-        if c.balance_paise < c.amount_paise:
+        # time-aware balance check, mirroring would_succeed's pattern exactly:
+        # use the balance as of at_hour's day when we recorded it; otherwise
+        # fall back to the current live balance
+        history = self.balance_history.get(customer_id, [])
+        day = at_hour // HOURS_PER_DAY
+        balance = history[day] if history and day < len(history) else c.balance_paise
+        if balance < c.amount_paise:
             return DeclineCode.INSUFFICIENT_FUNDS
+        # bookkeeping deduction still comes off the live scalar, not the
+        # historical snapshot: eval worlds bill each customer at most once
+        # per run (run_cycle(30, ...)), so there's no double-collection path
+        # where this scalar/history divergence would matter
         c.balance_paise -= c.amount_paise
         return None
 
