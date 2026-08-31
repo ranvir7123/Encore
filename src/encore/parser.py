@@ -65,14 +65,14 @@ money arrives. Replies may be Hindi/Hinglish. Do not invent a day."""
 
 
 def parse_llm(text: str, model: str = "claude-sonnet-5") -> ReplyIntent:
-    import anthropic
-
-    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
-    msg = client.messages.create(
-        model=model, max_tokens=100, system=SYSTEM,
-        messages=[{"role": "user", "content": text}],
-    )
     try:
+        import anthropic
+
+        client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        msg = client.messages.create(
+            model=model, max_tokens=100, system=SYSTEM,
+            messages=[{"role": "user", "content": text}],
+        )
         return ReplyIntent(**json.loads(msg.content[0].text))
-    except Exception:  # noqa: BLE001 -- intentional: any validation failure must fall back, never break the pipeline
+    except Exception:  # noqa: BLE001 -- intentional: any failure (missing key, network, API error, JSON, validation) must fall back, never break the pipeline
         return parse_keyword(text)  # the model never gets to break the pipeline

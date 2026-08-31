@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from encore.parser import ReplyIntent, evaluate, parse_keyword
+from encore.parser import ReplyIntent, evaluate, parse_keyword, parse_llm
 
 
 def test_cancel_hinglish():
@@ -34,3 +34,10 @@ def test_evaluate_keyword_parser_on_labeled_set():
     assert result["correct_full"] == 27
     assert result["accuracy_kind"] == 27 / 40
     assert result["accuracy_full"] == 27 / 40
+
+
+def test_parse_llm_falls_back_when_api_key_missing(monkeypatch):
+    # No network call happens: the missing key raises KeyError before any
+    # request is made, and that failure must be caught, not propagated.
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert parse_llm("band kar do isko").kind == "cancel"
