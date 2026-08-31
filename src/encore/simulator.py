@@ -48,6 +48,7 @@ class Portfolio:
     rng: random.Random
     issuer_down_hours: set[int] = field(default_factory=set)
     _replies: list[ReplyEvent] = field(default_factory=list)
+    balance_history: dict[str, list[int]] = field(default_factory=dict)
 
     @classmethod
     def generate(cls, n_customers: int, regime: RegimeConfig, seed: int) -> "Portfolio":
@@ -83,6 +84,8 @@ class Portfolio:
                 if credited:
                     c.balance_paise += self.rng.randint(15_00000, 60_00000)  # salary credit
                 c.balance_paise = max(0, c.balance_paise - c.daily_spend_paise)
+                # one snapshot per customer per simulated day; no RNG consumed here
+                self.balance_history.setdefault(c.customer_id, []).append(c.balance_paise)
 
     def would_succeed(self, customer_id: str, at_hour: int) -> bool:
         c = self.customers[customer_id]
@@ -90,7 +93,13 @@ class Portfolio:
             return False
         if at_hour in self.issuer_down_hours:
             return False
-        return c.balance_paise >= c.amount_paise
+        history = self.balance_history.get(customer_id, [])
+        day = at_hour // HOURS_PER_DAY
+        # use the balance as of at_hour's day when we recorded it; otherwise fall
+        # back to the current live balance (keeps far-future/no-history queries
+        # consistent with debit(), which always uses the live balance)
+        balance = history[day] if history and day < len(history) else c.balance_paise
+        return balance >= c.amount_paise
 
     def debit(self, customer_id: str, at_hour: int) -> DeclineCode | None:
         """Attempt a debit against latent state. None = success (balance deducted)."""

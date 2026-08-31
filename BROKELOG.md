@@ -205,3 +205,54 @@ edited after the fact.
   `.superpowers/sdd/encore-build-plan/task-8-report.md` for the real command
   output.
 - **Still open:** nothing.
+
+### 2026-08-31 — Oracle labels were time-invariant: would_succeed read end-of-cycle balance for every candidate hour
+
+- **What happened:** Code review of the Task 8 ML core (already believed
+  done — main commit `4098fd7` merged and pushed) found that
+  `Portfolio.would_succeed(customer_id, at_hour)` in `src/encore/simulator.py`
+  checked `c.balance_paise >= c.amount_paise`, where `c.balance_paise` is a
+  single mutated scalar on the `Customer` object reflecting whatever the
+  balance happened to be at the moment `would_succeed` is called (i.e.
+  end-of-`run_cycle` state), regardless of the `at_hour` argument. Since
+  `generate_training_data` calls `p.would_succeed(f.customer_id, h)` *after*
+  `p.run_cycle(60, ...)` has already finished mutating every customer's
+  balance to its final value, all 12 candidate-hour labels sampled for a
+  given failure get the identical answer (except on the rare hour that
+  lands inside `issuer_down_hours`, which is genuinely time-varying). The
+  `at_hour` parameter — the only thing that's supposed to vary across the
+  12 samples per failure — carried essentially no timing signal into the
+  balance check, undermining the entire premise of "learn WHEN to retry":
+  regime `R2` (`uniform_credits=True`, destroys the salary-day signal) and
+  regime `R0`/`R1` should have produced measurably different learned
+  timing behavior, but with time-invariant balance labels there was no
+  timing signal for any regime to differ on.
+- **Evidence:** Standalone repro script sampling the same 12 candidate
+  hours `generate_training_data` uses for five real failures from
+  `Portfolio.generate(200, R0, seed=1).run_cycle(60, "train_1")`:
+  ```
+  cust_0004 insufficient_funds labels: [True, True, True, True, True, True, True, True, True, True, True, True] unique: {True}
+  cust_0051 insufficient_funds labels: [True, True, True, True, True, True, True, True, True, True, True, True] unique: {True}
+  cust_0109 insufficient_funds labels: [True, True, True, True, True, True, True, True, True, True, True, True] unique: {True}
+  cust_0146 insufficient_funds labels: [True, True, True, True, True, True, True, True, True, True, True, True] unique: {True}
+  cust_0167 insufficient_funds labels: [True, True, True, True, True, True, True, True, True, True, True, True] unique: {True}
+  ```
+  All 12 candidate hours per failure — spread across a 10-day window with
+  different days-of-month, hours-of-day, and days-since-failure — produced
+  the exact same label. `Customer.balance_paise` is a plain mutated `int`
+  field (`src/encore/simulator.py`'s `Customer` dataclass); nothing in
+  `would_succeed` reconstructed what the balance actually was at `at_hour`
+  specifically.
+- **Root cause:** `would_succeed` was written to check the *current*
+  (end-of-simulation) balance instead of the balance *as of `at_hour`*,
+  because `Portfolio` never recorded balance history — only the live
+  scalar `c.balance_paise`, updated in place once per simulated day inside
+  `_advance_hour`. `debit()` correctly uses the live balance because it
+  represents "attempt a real debit right now," but `would_succeed` is
+  meant to answer a counterfactual ("if we retried at this specific future
+  hour, would it succeed?") and had no per-hour balance data to answer
+  that counterfactually — it silently degraded to "would it succeed at the
+  end of the simulated window," true for all 12 sampled hours per failure
+  bar the issuer-down check.
+- **Fix:** commit hash after.
+- **Still open:** nothing.

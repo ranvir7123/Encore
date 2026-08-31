@@ -86,8 +86,14 @@ class LearnedPolicy:
                 now_hour: int) -> ProposedAction | None:
         if state.retries_attempted >= self._cfg.max_retries_per_cycle:
             return None
-        candidates = [h for h in _legal_candidates(now_hour, self._cfg)]
-        feats = [featurize(failed.decline, h, state.retries_attempted + 1,
+        # start past the wall's cooldown so denied proposals don't burn retry budget; the wall still enforces
+        start_hour = max(now_hour + 1,
+                         (state.last_attempt_hour + self._cfg.cooldown_hours)
+                         if state.last_attempt_hour is not None else now_hour + 1)
+        candidates = _legal_candidates(start_hour - 1, self._cfg)
+        # training labels only exist for attempt_no=1; passing live attempt numbers
+        # would query the model out of distribution on a feature it never saw vary
+        feats = [featurize(failed.decline, h, 1,
                            failed.amount_paise, failed.at_hour) for h in candidates]
         if not feats:
             return None
