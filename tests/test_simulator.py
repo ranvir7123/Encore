@@ -31,3 +31,15 @@ def test_oracle_agrees_with_debit_on_success():
     for cid in list(p.customers)[:20]:
         if p.would_succeed(cid, 999_999):
             assert p.debit(cid, 999_999) is None
+
+
+# Deliberate divergence: would_succeed is the LABELING oracle (latent churn intent = unrecoverable, so training labels are conservatively pessimistic for ~5% of customers); debit is the mechanical rail every policy is measured by. Bias direction: against the learned policy, never for it. See README limitations.
+def test_churn_intent_diverges_oracle_from_debit():
+    p = Portfolio.generate(10, R0, seed=1)
+    c = p.customers["cust_0000"]
+    c.churn_intent = True
+    c.revoked = False
+    c.balance_paise = c.amount_paise * 2
+    at_hour = 100
+    assert p.would_succeed(c.customer_id, at_hour) is False
+    assert p.debit(c.customer_id, at_hour) is None
