@@ -137,3 +137,62 @@ edited after the fact.
   one billing period per `cycle_id`, or generate a distinct `cycle_id` per
   billing occurrence (e.g. include the billing month/day in the id) — not
   investigated further here, flagged for whoever builds Task 10.
+
+### 2026-08-31 — Plan's training-data volume estimate wrong: 200x2-seed world yields 384 rows, test demanded >500
+
+- **What happened:** Task 8 brief's `tests/test_model.py::test_training_data_has_both_labels`,
+  transcribed verbatim, calls
+  `generate_training_data(R0, n_customers=200, seeds=[1, 2])` and asserts
+  `len(X) == len(y) > 500`. `src/encore/model.py`'s `generate_training_data`,
+  also transcribed verbatim from the brief, produced exactly 384 rows for
+  that call — deterministically, confirmed on repeated runs. Real failing
+  output:
+  ```
+  def test_training_data_has_both_labels():
+      X, y = generate_training_data(R0, n_customers=200, seeds=[1, 2])
+      assert len(X) == len(y) > 500
+  E       assert 384 > 500
+  E        +  where 384 = len([1, 1, 1, 1, 1, 1, ...])
+  tests\test_model.py:17: AssertionError
+  ```
+- **Evidence:**
+  ```
+  $ uv run pytest tests/test_model.py -q
+  .F..
+  ================================== FAILURES ===================================
+  _____________________ test_training_data_has_both_labels ______________________
+      def test_training_data_has_both_labels():
+          X, y = generate_training_data(R0, n_customers=200, seeds=[1, 2])
+  >       assert len(X) == len(y) > 500
+  E       assert 384 > 500
+  E        +  where 384 = len([1, 1, 1, 1, 1, 1, ...])
+  tests\test_model.py:17: AssertionError
+  =========================== short test summary info ===========================
+  FAILED tests/test_model.py::test_training_data_has_both_labels - assert 384 >...
+  1 failed, 3 passed in 116.17s
+  ```
+  A standalone diagnostic script calling the exact same
+  `generate_training_data(R0, n_customers=200, seeds=[1, 2])` printed
+  `len(X) = 384`, `sum(y)/len(y) = 0.8463541666666666` (label balance is
+  fine — this is a pure row-count shortfall, not a degenerate-label
+  problem). The sibling test's larger world,
+  `generate_training_data(R0, n_customers=300, seeds=[1, 2, 3])`, produced
+  `len(X2) = 636` rows and a holdout accuracy of `0.90625` on the
+  `test_model_beats_coin_flip_on_holdout_split` 80/20 split — comfortably
+  above both bars.
+- **Root cause:** The brief's row-count expectation (`> 500` from a
+  200-customer, 2-seed world) didn't survive contact with the simulator's
+  actual soft-decline rate. `Portfolio.generate` seeds each customer's
+  starting balance at `rng.randint(0, 3 * amount)` and credits a full
+  salary (`rng.randint(15_00000, 60_00000)`) on `salary_day`, so most
+  customers stay solvent by the time their `billing_day` debit fires; only
+  ~4% of billing attempts actually soft-decline (insufficient funds, issuer
+  down, or gateway timeout) in a 200x2-seed world over `run_cycle(60, ...)`.
+  Each soft-decline failure contributes exactly 12 rows
+  (`rng.sample(_legal_candidates(...), 12)`), so 32 soft-decline failures x
+  12 = 384 rows — short of the `> 500` bar the brief assumed. The
+  `n_customers=300, seeds=[1, 2, 3]` world used by the sibling holdout test
+  produces proportionally more failures (53 x 12 = 636) and clears the bar
+  with margin.
+- **Fix:** commit hash after.
+- **Still open:** nothing.
