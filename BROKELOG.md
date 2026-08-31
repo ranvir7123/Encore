@@ -254,5 +254,33 @@ edited after the fact.
   that counterfactually — it silently degraded to "would it succeed at the
   end of the simulated window," true for all 12 sampled hours per failure
   bar the issuer-down check.
-- **Fix:** commit hash after.
+- **Fix:** `62467c0`. Added a `balance_history: dict[str, list[int]]` field
+  to `Portfolio`, populated with one snapshot per customer per simulated
+  day inside `_advance_hour` (no RNG consumed, no reordering of existing
+  RNG draws). `would_succeed` now looks up the balance for
+  `day = at_hour // HOURS_PER_DAY` from that history when the day was
+  recorded, falling back to the current live `c.balance_paise` only when
+  history is empty or the day is beyond what was recorded (keeps
+  `test_oracle_agrees_with_debit_on_success`'s far-future query at hour
+  `999_999` consistent with `debit()`, which always uses the live
+  balance). `debit()`, `run_cycle`'s billing logic, and every RNG call
+  sequence were left untouched. Same commit also fixed two related
+  plan-mandated defects surfaced by the same review: `LearnedPolicy.propose`
+  in `src/encore/model.py` now starts its candidate horizon past the
+  wall's cooldown (`max(now_hour + 1, last_attempt_hour + cooldown_hours)`)
+  instead of proposing hours the wall would deny for cooldown and burning
+  retry budget on denials; and `propose` now scores candidates with the
+  constant `attempt_no=1` instead of `state.retries_attempted + 1`, since
+  training labels only ever exist for `attempt_no=1` (`generate_training_data`
+  hardcodes it) — passing 2 or 3 at inference queried the model out of
+  distribution on a feature it never saw vary. Determinism tests
+  (`test_same_seed_same_world`, `test_different_seed_different_world`)
+  still pass unchanged. Real before/after on
+  `generate_training_data(R0, n_customers=300, seeds=[1, 2, 3])`: label
+  balance moved from `0.830` (mostly-`True`, time-invariant) to `0.450`
+  (now genuinely mixed, since timing actually matters); holdout accuracy
+  on `test_model_beats_coin_flip_on_holdout_split` moved from `0.906` to
+  `0.977`. Full suite (43 tests) and `ruff check .` both pass — see
+  `.superpowers/sdd/encore-build-plan/task-8-report.md` for the real
+  command output.
 - **Still open:** nothing.
