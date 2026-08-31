@@ -1,0 +1,40 @@
+{"text": "salary 5 tarikh ko aayegi, tab try karna", "kind": "promise_to_pay", "promise_day": 5}
+{"text": "band kar do isko", "kind": "cancel", "promise_day": null}
+{"text": "cancel karo please", "kind": "cancel", "promise_day": null}
+{"text": "will pay after 7th", "kind": "promise_to_pay", "promise_day": 7}
+{"text": "maine already pay kar diya, phir se kyu kata?", "kind": "dispute", "promise_day": null}
+{"text": "next month se mat kaatna paise", "kind": "cancel", "promise_day": null}
+{"text": "1 tarikh ko salary credit hoti hai", "kind": "promise_to_pay", "promise_day": 1}
+{"text": "ok", "kind": "other", "promise_day": null}
+{"text": "kaun ho aap log", "kind": "other", "promise_day": null}
+{"text": "retry on 15th please", "kind": "promise_to_pay", "promise_day": 15}
+{"text": "kal paisa aa jayega, try kar lena", "kind": "promise_to_pay", "promise_day": null}
+{"text": "parso tak kar dunga payment", "kind": "promise_to_pay", "promise_day": null}
+{"text": "agle hafte paisa bhej dunga", "kind": "promise_to_pay", "promise_day": null}
+{"text": "salary aane par turant kar dunga", "kind": "promise_to_pay", "promise_day": null}
+{"text": "maine to pay kar diya tha", "kind": "dispute", "promise_day": null}
+{"text": "paisa kat gaya par subscription nahi mila", "kind": "dispute", "promise_day": null}
+{"text": "double charge ho gaya, refund chahiye", "kind": "dispute", "promise_day": null}
+{"text": "already paid ho chuka hai, check karo", "kind": "dispute", "promise_day": null}
+{"text": "31 tarikh ko dekh lena", "kind": "promise_to_pay", "promise_day": null}
+{"text": "kal subscription band kar dena", "kind": "cancel", "promise_day": null}
+{"text": "mat bhejo message ab", "kind": "cancel", "promise_day": null}
+{"text": "please unsubscribe me", "kind": "cancel", "promise_day": null}
+{"text": "stop karo ye plan", "kind": "cancel", "promise_day": null}
+{"text": "isko cancel kar do turant", "kind": "cancel", "promise_day": null}
+{"text": "nahi chahiye ye service", "kind": "cancel", "promise_day": null}
+{"text": "??", "kind": "other", "promise_day": null}
+{"text": "🙏🙏", "kind": "other", "promise_day": null}
+{"text": "wrong number, mujhe mat karo contact", "kind": "other", "promise_day": null}
+{"text": "haha nice try", "kind": "other", "promise_day": null}
+{"text": "👍", "kind": "other", "promise_day": null}
+{"text": "kya bakwas hai ye", "kind": "other", "promise_day": null}
+{"text": "mera purana subscription cancel tha, ab naya wale ka payment kal karunga", "kind": "promise_to_pay", "promise_day": null}
+{"text": "yeh charge galat hai, maine kabhi order nahi kiya", "kind": "dispute", "promise_day": null}
+{"text": "will clear the dues by 20th", "kind": "promise_to_pay", "promise_day": 20}
+{"text": "pay you by 9th, sorry for delay", "kind": "promise_to_pay", "promise_day": 9}
+{"text": "agle hafte try karunga", "kind": "promise_to_pay", "promise_day": null}
+{"text": "kal try karunga", "kind": "promise_to_pay", "promise_day": null}
+{"text": "salary aane ke baad kar dunga", "kind": "promise_to_pay", "promise_day": null}
+{"text": "paisa aayega parso, tab dekhte hain", "kind": "promise_to_pay", "promise_day": null}
+{"text": "please retry next month", "kind": "promise_to_pay", "promise_day": null}
