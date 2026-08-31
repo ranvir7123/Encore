@@ -34,7 +34,7 @@ edited after the fact.
   Success/Failure buttons, as the substitute for the UPI VPA trick. This is
   now the documented mechanism for Task 10/11's test-mode payment
   simulation. Landed together with the rest of the Task 2 spike work in
-  commit `<fill after commit — see below>`.
+  commit `a48b751` ("feat: razorpay client + test-mode spike notes").
 - **Still open:** Whether UPI becomes available on this account later (e.g.
   after KYC/activation) is unknown and was not investigated further, since
   Netbanking already provides a deterministic success/failure repro path.
