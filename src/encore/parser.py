@@ -1,6 +1,8 @@
 import json
 import os
 import re
+from collections.abc import Callable
+from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -24,6 +26,36 @@ def parse_keyword(text: str) -> ReplyIntent:
     if PROMISE_WORDS.search(text):
         return ReplyIntent(kind="promise_to_pay")
     return ReplyIntent(kind="other")
+
+
+def evaluate(parser_fn: Callable[[str], ReplyIntent], eval_path: Path) -> dict:
+    """Score parser_fn against a labeled JSONL set of {text, kind, promise_day} rows.
+
+    correct_kind counts rows where the predicted kind matches the label.
+    correct_full additionally requires promise_day to match exactly.
+    """
+    rows = [
+        json.loads(line)
+        for line in Path(eval_path).read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    n = len(rows)
+    correct_kind = 0
+    correct_full = 0
+    for row in rows:
+        gold = ReplyIntent(kind=row["kind"], promise_day=row["promise_day"])
+        pred = parser_fn(row["text"])
+        if pred.kind == gold.kind:
+            correct_kind += 1
+            if pred.promise_day == gold.promise_day:
+                correct_full += 1
+    return {
+        "n": n,
+        "correct_kind": correct_kind,
+        "correct_full": correct_full,
+        "accuracy_kind": correct_kind / n if n else 0.0,
+        "accuracy_full": correct_full / n if n else 0.0,
+    }
 
 
 SYSTEM = """You classify a subscription customer's reply about a failed payment.
