@@ -112,7 +112,7 @@ edited after the fact.
   twice (97 total failures), and several mix a soft decline in one
   occurrence with a hard decline in the other — that's what produces the
   intersection.
-- **Fix:** commit hash TBD (filled in after committing). Changed
+- **Fix:** `8f787ae`. Changed
   `tests/test_scheduler.py`'s `build_world` to
   call `p.run_cycle(30, "c1")` instead of `run_cycle(60, "c1")` so each
   customer bills at most once per run and the test's per-customer grouping
