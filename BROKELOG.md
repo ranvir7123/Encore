@@ -495,5 +495,5 @@ edited after the fact.
   reference_ids and ledger/idempotency behavior are unaffected. `demo.py`'s
   real-rail path is unaffected in substance -- the real API ignores
   `execute_at_hour` entirely (a human pays the link whenever they click
-  through). Fix commit: `PENDING` (backfilled after commit).
+  through). Fix commit: `7c0b956`.
 - **Still open:** nothing.
