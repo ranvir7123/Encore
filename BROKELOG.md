@@ -431,5 +431,5 @@ edited after the fact.
   bill each customer at most once per run via `run_cycle(30, ...)`, so
   there is no double-collection path where that scalar/history divergence
   could matter), were left exactly as-is. `would_succeed`, `run_cycle`,
-  and every RNG call sequence were left untouched. Hash: `<TO BE FILLED>`.
+  and every RNG call sequence were left untouched. Fix commit: `869cdcf`.
 - **Still open:** nothing.
