@@ -114,12 +114,23 @@ def run_demo_slice(n: int = 3, timeout_s: int = 300, interval_s: int = 5,
     planned = []  # (failed, action, aid)
     actions: dict[str, ProposedAction] = {}
     for failed in failures:
-        # attempt_no=1, execute_at_hour=failed.at_hour: this demo creates one
-        # real link per failure right now, it does not schedule a future retry
-        # sequence through the wall -- attempt_id only needs kind+attempt_no to
-        # be stable and collision-free, which this satisfies.
+        # attempt_no=1, execute_at_hour=failed.at_hour + 72 (a T+3-days retry --
+        # matches the product's actual retry framing, e.g. FixedSchedule's T+1/
+        # T+2/T+3 shape). On the real rail this hour is inert bookkeeping: a
+        # human pays the link whenever they click through, the API doesn't
+        # consult it. But --dry-run's SimulatedRazorpayClient calls
+        # SimulatedRail.execute(action), which (as of the time-aware rail fix,
+        # commit 869cdcf/BROKELOG "Dry-run demo evidence went stale...") looks
+        # up simulated balance at execute_at_hour via balance_history -- and
+        # execute_at_hour=failed.at_hour would replay the debit at the EXACT
+        # hour it already failed, deterministically re-failing every time.
+        # +72h gives the simulated customer's balance a chance to have moved
+        # (e.g. a later salary credit) by the hour the "retry" is dated to,
+        # same as a real T+3 retry would. attempt_id does not include the
+        # hour, so reference_ids and ledger/idempotency behavior are
+        # unaffected by this change.
         action = ProposedAction(ActionKind.RETRY, failed.customer_id, failed.cycle_id,
-                                failed.amount_paise, failed.at_hour, 1)
+                                failed.amount_paise, failed.at_hour + 72, 1)
         aid = attempt_id(action)
         actions[aid] = action
         planned.append((failed, action, aid))
@@ -137,6 +148,14 @@ def run_demo_slice(n: int = 3, timeout_s: int = 300, interval_s: int = 5,
             continue
         description = f"Encore demo: {failed.customer_id} soft-decline retry ({aid})"
         link = client.create_payment_link(failed.amount_paise, description, aid)
+        # Crash gap: if the process dies between create_payment_link succeeding
+        # and ledger.record(aid) running, the real link exists but the local
+        # ledger never learns about it. A rerun would then attempt to create a
+        # second link with the same reference_id -- Razorpay is expected to
+        # reject that as a duplicate-reference_id error (unhandled here), not
+        # silently double-create a link. Acceptable for an operator-watched
+        # demo (the operator sees the crash and the error), not hardened
+        # against for unattended/automated use.
         ledger.record(aid)
         created.append({"failed": failed, "action": action, "aid": aid, "link": link})
         print(f"[{i}] {aid}")

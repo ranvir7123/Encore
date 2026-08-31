@@ -433,3 +433,67 @@ edited after the fact.
   could matter), were left exactly as-is. `would_succeed`, `run_cycle`,
   and every RNG call sequence were left untouched. Fix commit: `869cdcf`.
 - **Still open:** nothing.
+
+### 2026-08-31 — Dry-run demo evidence went stale when the rail became time-aware
+- **What happened:** Task 11's `--dry-run` evidence was captured (and quoted
+  verbatim in `task-11-report.md`) *before* commit `869cdcf`
+  ("fix: time-aware simulated rail...") landed on `main`. That transcript
+  genuinely showed `status=paid outcome=success` for both sampled links at
+  the time it was run. After `869cdcf`/`f911096` landed, the identical
+  command (`uv run python -m encore.demo --dry-run --n 2`) deterministically
+  produces `status=created outcome=no_terminal_status_within_timeout` for
+  both links instead — not flaky, not a regression in `demo.py`'s own logic,
+  but a genuine behavior change: `encore.demo`'s action always replayed each
+  failure at `failed.at_hour`, the exact hour the debit already failed at,
+  and the now-time-aware `SimulatedRail`/`Portfolio.debit` looks up simulated
+  balance at that exact hour via `balance_history` — so a replay at the
+  failure hour is now guaranteed to re-fail, every time, for every customer.
+  The report presented the pre-fix transcript as current evidence when it no
+  longer reflected the code's actual behavior, and the dry-run path could no
+  longer exercise the success branch at all.
+- **Evidence:** Pre-fix transcript, as originally captured and quoted in
+  `task-11-report.md` (`uv run python -m encore.demo --dry-run --n 2`):
+  ```
+  cust_0113:demo_s100:retry:1: status=paid outcome=success
+  cust_0403:demo_s100:retry:1: status=paid outcome=success
+  ```
+  Post-fix, same command, same seed, same code path (independently
+  reproduced via a standalone script replaying the pre-fix `execute_at_hour
+  = failed.at_hour` shape against the current `SimulatedRail`):
+  ```
+  total soft-decline failures available: 32
+  at failed.at_hour (pre-fix replay hour): paid=0 created=32 of 32
+
+  first 4 (matches --dry-run --n 4 ordering):
+  cust_0113:demo_s100:retry:1: status=created outcome=no_terminal_status_within_timeout
+  cust_0403:demo_s100:retry:1: status=created outcome=no_terminal_status_within_timeout
+  cust_0092:demo_s100:retry:1: status=created outcome=no_terminal_status_within_timeout
+  cust_0417:demo_s100:retry:1: status=created outcome=no_terminal_status_within_timeout
+  ```
+  0/32 of the seed-100/r0_base soft-decline failures succeed when replayed
+  at their own original failure hour, confirmed exhaustively, not just on
+  the first 2 or 4.
+- **Root cause:** `encore.demo`'s `ProposedAction.execute_at_hour` was pinned
+  to `failed.at_hour` — reasonable when `SimulatedRail.execute` consulted
+  only the live end-of-cycle balance scalar (time-blind), but semantically
+  wrong once `Portfolio.debit` became time-aware: replaying "would this
+  debit succeed at the exact hour it already failed" against a time-aware
+  balance history is definitionally the same failed query run twice, and
+  will always return the same answer. The demo's own file (`demo.py`) was
+  never touched by `869cdcf`/`f911096` — the semantic ground shifted under
+  it from a change to a shared dependency (`simulator.py`), not from any
+  edit to `demo.py` itself, which is why this wasn't caught until the next
+  review pass specifically re-checked the demo's evidence against the
+  current codebase.
+- **Fix:** `execute_at_hour` changed from `failed.at_hour` to
+  `failed.at_hour + 72` (a T+3-days retry, matching the product's own
+  documented retry framing, e.g. `FixedSchedule`'s T+1/T+2/T+3 shape) in
+  `src/encore/demo.py`. Re-verified post-fix: of the same 32 soft-decline
+  failures, 13/32 now succeed and 19/32 time out at +72h — both the success
+  and timeout branches are genuinely exercised by `--dry-run` again, not
+  forced to one outcome. `attempt_id` does not include the hour, so
+  reference_ids and ledger/idempotency behavior are unaffected. `demo.py`'s
+  real-rail path is unaffected in substance -- the real API ignores
+  `execute_at_hour` entirely (a human pays the link whenever they click
+  through). Fix commit: `PENDING` (backfilled after commit).
+- **Still open:** nothing.
