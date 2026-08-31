@@ -278,3 +278,112 @@ the link amount.
 - Should Task 11 poll the underlying order/payments instead of (or in
   addition to) the payment link status, given the `created`-stays-`created`
   behavior on failure observed above?
+
+## Task 11 live demo run
+
+Date: 2026-08-31 (same day, later). Command run by the controller:
+
+```
+PYTHONUNBUFFERED=1 uv run python -m encore.demo --n 4 --timeout 240
+```
+
+Full terminal transcript, verbatim:
+
+```
+=== Encore demo slice ===
+seed=100 regime=r0_base n_requested=4 n_available=4
+
+[1] cust_0113:demo_s100:retry:1: already executed (ledger hit) -- skipping, no new link created.
+[2] cust_0403:demo_s100:retry:1: already executed (ledger hit) -- skipping, no new link created.
+[3] cust_0092:demo_s100:retry:1
+    amount: INR 999.00 (99900 paise)
+    link:   https://rzp.io/rzp/QEEb5kcT
+[4] cust_0417:demo_s100:retry:1
+    amount: INR 199.00 (19900 paise)
+    link:   https://rzp.io/rzp/h7uDrXhc
+
+(operator instructions omitted)
+
+Polling 2 link(s) (timeout=240s, interval=5s each)...
+
+cust_0092:demo_s100:retry:1: status=paid outcome=success
+cust_0417:demo_s100:retry:1: status=created outcome=no_terminal_status_within_timeout
+```
+
+Resulting `runs/demo_audit.jsonl`, verbatim (4 lines):
+
+```json
+{"event": "duplicate_blocked", "attempt_id": "cust_0113:demo_s100:retry:1", "reference_id": "cust_0113:demo_s100:retry:1"}
+{"event": "duplicate_blocked", "attempt_id": "cust_0403:demo_s100:retry:1", "reference_id": "cust_0403:demo_s100:retry:1"}
+{"event": "execution", "customer_id": "cust_0092", "attempt_id": "cust_0092:demo_s100:retry:1", "reference_id": "cust_0092:demo_s100:retry:1", "link_id": "plink_TWNaIZxUaf4nl8", "amount_paise": 99900, "status": "paid", "outcome": "success", "rail": "razorpay_test_mode"}
+{"event": "execution", "customer_id": "cust_0417", "attempt_id": "cust_0417:demo_s100:retry:1", "reference_id": "cust_0417:demo_s100:retry:1", "link_id": "plink_TWNaJA6Iehrx7c", "amount_paise": 19900, "status": "created", "outcome": "no_terminal_status_within_timeout", "rail": "razorpay_test_mode"}
+```
+
+### What happened, link by link
+
+- `[1]` `cust_0113:demo_s100:retry:1` and `[2]` `cust_0403:demo_s100:retry:1`
+  were **skipped** — `AttemptLedger.already_executed` hit, because these two
+  reference_ids were already created and recorded during an earlier aborted
+  dry-run-adjacent invocation of `encore.demo` (the one used for Task 11's own
+  code-review/verification pass, against the *real* ledger file
+  `runs/demo_ledger.txt`, not the `_dryrun` one). No new Payment Link was
+  created for either; only `duplicate_blocked` audit records were appended.
+- `[3]` `cust_0092:demo_s100:retry:1` — link `plink_TWNaIZxUaf4nl8`
+  (`https://rzp.io/rzp/QEEb5kcT`, ₹999). Controller paid it via the Netbanking
+  mock bank page, clicking **Success** (payment id `pay_TWNc61563OZWxl`). The
+  poller correctly resolved `status=paid outcome=success`.
+- `[4]` `cust_0417:demo_s100:retry:1` — link `plink_TWNaJA6Iehrx7c`
+  (`https://rzp.io/rzp/h7uDrXhc`, ₹199). Controller deliberately failed it via
+  the Netbanking mock bank page, clicking **Failure** (payment id
+  `pay_TWNdukJdEe4NmX`). The link's status never left `created` — exactly the
+  behavior this spike document predicted above ("Key finding for Task 11's
+  polling design"). `poll_until_terminal` ran for the full `--timeout 240`
+  seconds, then correctly returned the last observed status (`created`)
+  instead of hanging or crashing; `run_demo_slice` classified this as
+  `outcome="no_terminal_status_within_timeout"`, a distinct record from both
+  `success` and a hypothetical `failure`. Exit code 0.
+
+### Observations
+
+1. **Ledger-hit skipping was demonstrated live, not just in the dry-run
+   verification.** Links `[1]`/`[2]` were the byproduct of an earlier,
+   separately-aborted invocation against the real (non-`_dryrun`) ledger.
+   Rather than creating two brand-new real Payment Links (and burning two
+   more never-reusable `reference_id`s — see note below), the idempotency
+   check in `run_demo_slice` correctly recognized both `attempt_id`s as
+   already-executed and skipped link creation, appending
+   `duplicate_blocked` records instead. This is the real-rail proof of the
+   same behavior Task 11's `--dry-run` re-run test demonstrated in
+   isolation: the `AttemptLedger` check protects the live rail exactly as
+   designed, without needing a special-case for "real vs. simulated."
+2. **The failure link behaved exactly as the Task 2 spike predicted.**
+   `plink_TWNaJA6Iehrx7c`'s status never left `created` after the operator
+   deliberately clicked Failure on Razorpay's mock bank page — `amount_paid`
+   stayed effectively unpaid and no terminal status (`paid`/`cancelled`/
+   `expired`) was ever produced by the API, matching `spike-002`'s
+   (`plink_TWLLmoEcAAGI4v`) behavior from the original Task 2 spike above.
+   `outcome="no_terminal_status_within_timeout"` is therefore the *correct*
+   record for this case — not a bug, not an ambiguous result — and is exactly
+   the outcome Task 11's design (see `task-11-report.md`) was built to
+   produce instead of a false `"failure"` classification or an infinite hang.
+
+### Notes for any future on-camera rerun
+
+- **Buffered stdout hides the printed URLs when output is redirected or
+  captured** (e.g. piped to a file, or captured by a recording tool that
+  doesn't allocate a real TTY) — Python buffers stdout differently for a pipe
+  than for an interactive terminal, and the numbered-list URLs are the first
+  thing printed. Run with `PYTHONUNBUFFERED=1` (as done above) or in a real
+  console window so URLs appear immediately rather than only at process exit
+  or not at all if the process is killed mid-run.
+- **Each `reference_id` is consumed forever on this Razorpay account** — once
+  an `attempt_id` has been used to create a real Payment Link, Razorpay itself
+  (not just the local `AttemptLedger`) has recorded that `reference_id`
+  against a real link; nothing observed in this spike suggests Razorpay would
+  accept creating a second link with the same `reference_id` cleanly, and in
+  any case the local ledger will block the attempt first (as demonstrated
+  above). A fresh on-camera run should therefore either (a) leave
+  `runs/demo_ledger.txt` intact and treat any ledger-hit skips as
+  demo-worthy proof of idempotency (as this run did for `[1]`/`[2]`), or (b)
+  pass a higher `--n` so it reaches past the already-consumed reference_ids
+  into fresh soft-decline failures instead of re-colliding with them.
