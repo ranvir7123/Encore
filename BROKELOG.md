@@ -206,6 +206,89 @@ edited after the fact.
   output.
 - **Still open:** nothing.
 
+### 2026-08-31 — Task 10 eval matrix: encore_learned ties, not beats, fixed_t123 on recovered money in every regime
+
+- **What happened:** Task 10 brief's Step 5 states "the learned policy should
+  beat both baselines on r1 and collapse toward them on r2." The real matrix
+  (`uv run python -m encore.evaluate`, seeds `[100, 101, 102]`,
+  `n_customers=500`) instead shows `recovered_per_1000_failures_paise` for
+  `encore_learned` and `fixed_t123` **bit-for-bit identical** in all three
+  regimes (r0_base, r1_shifted, r2_no_signal) — not close, not "collapsed
+  toward," but exactly equal to the paisa.
+- **Evidence:** `runs/eval.json` (also pasted verbatim in
+  `.superpowers/sdd/encore-build-plan/task-10-report.md`):
+  `r0_base`: both 18825909; `r1_shifted`: both 27981242; `r2_no_signal`: both
+  13668289. A standalone diagnostic script re-read the per-seed audit
+  JSONL files still on disk under `runs/` and compared, for every
+  (regime, seed) pair, the exact set of customers each policy successfully
+  debited and the exact total paise recovered:
+  ```
+  r0_base      100 n_fixed 22  n_learned 22  same_customer_set True same_total_amount True
+  r0_base      101 n_fixed 30  n_learned 30  same_customer_set True same_total_amount True
+  r0_base      102 n_fixed 31  n_learned 31  same_customer_set True same_total_amount True
+  r1_shifted   100 n_fixed 156 n_learned 156 same_customer_set True same_total_amount True
+  r1_shifted   101 n_fixed 157 n_learned 157 same_customer_set True same_total_amount True
+  r1_shifted   102 n_fixed 146 n_learned 146 same_customer_set True same_total_amount True
+  r2_no_signal 100 n_fixed 63  n_learned 63  same_customer_set True same_total_amount True
+  r2_no_signal 101 n_fixed 67  n_learned 67  same_customer_set True same_total_amount True
+  r2_no_signal 102 n_fixed 91  n_learned 91  same_customer_set True same_total_amount True
+  ```
+  All 9 (regime, seed) cells: identical customer set, identical total paise,
+  every single time — while the actual attempt hours chosen were almost
+  always different (156/156 matched successes in `r1_shifted` seed 100 used
+  a different `at_hour`; only 5/156 even landed in the same day-bucket).
+  `recovery_per_attempt_paise` (the per-attempt efficiency metric) does
+  differ and does favor `encore_learned` in every regime: r0_base 48726 vs
+  fixed's 47065; r1_shifted 44686 vs 43468; r2_no_signal 8459 vs 8445.
+- **Root cause:** Two simulator properties combine to make the recovered-
+  money *total* insensitive to which compliant day a policy retries on, as
+  long as it uses its full retry budget: (1) `amount_paise` is fixed per
+  customer (`src/encore/simulator.py`'s `Customer.amount_paise`, set once at
+  `Portfolio.generate` and never varied by attempt), so it doesn't matter
+  *which* successful day recovers a customer — the recovered amount is the
+  same either way; (2) once a customer's balance clears the debit amount
+  (typically right after their salary credit, which is 15-60x the daily
+  spend), it stays cleared for a long stretch, because daily spend
+  (`rng.randint(1000, 15000)`) is tiny relative to the salary credit
+  (`rng.randint(15_00000, 60_00000)`) — so solvency is a near-monotonic,
+  long-lived condition, not a narrow window a policy could miss by picking
+  the wrong day. `FixedSchedule` (fixed T+1/T+2/T+3) and `LearnedPolicy`
+  (model-guided, explores up to a 10-day horizon, same 3-attempt cap) end up
+  "catching" the exact same population of eventually-solvent customers
+  within their shared budget, just via different specific days/hours. Since
+  `LearnedPolicy`'s stopping rule (`probs[best] * amount < cost: park`) is
+  explicitly optimizing for cost-per-recovery, not for expanding which
+  customers are ever reachable — and both policies share the same
+  reachable ceiling (3 attempts each) — the *total* recovered money ties,
+  while the *attempts needed* to reach that total is where `encore_learned`
+  actually wins.
+- **Fix:** n/a — this is not a bug in `evaluate.py`, `scheduler.py`, or the
+  wall; it is a genuine structural property of how the simulator and the
+  two compliant policies interact. Per Task 10's explicit instruction ("do
+  NOT tune the simulator or model to force a win"), no simulator or model
+  code was changed to manufacture the recovered-money win the brief
+  predicted. The real, measurable win for `encore_learned` is
+  `recovery_per_attempt_paise` — it recovers the identical total money
+  using measurably fewer contact attempts in every regime, which is exactly
+  what its cost-based stopping rule is designed to optimize.
+  `compliance_violations` is 0 in all 9 cells either way.
+  `immediate_x3` (the deliberately-dumb baseline) recovers **zero** paise in
+  every regime: its "retry 1 hour after failure" schedule always lands
+  outside the wall's 22:00-07:00 execution window on the first try
+  (failures always occur at hour-of-day 6, so T+1 is hour-of-day 7 — just
+  past the window boundary), and its own back-to-back proposals then trip
+  `cooldown_active` on the remaining two tries before it exhausts its
+  3-attempt budget and parks, having executed nothing. This matches the
+  existing `test_immediate_retry_burns_attempts_on_window_denials`
+  (`tests/test_scheduler.py`) and is the intended lesson of that baseline,
+  not a new finding.
+- **Still open:** whether a richer eval design (larger retry cap, a harder
+  cost floor, or per-customer amounts that vary by attempt) would make the
+  recovered-money *ceiling* itself distinguishable between compliant
+  policies was not investigated — out of scope for Task 10, whose
+  instruction was to report the real numbers the harness produces, not
+  redesign the eval to produce a different headline shape.
+
 ### 2026-08-31 — Oracle labels were time-invariant: would_succeed read end-of-cycle balance for every candidate hour
 
 - **What happened:** Code review of the Task 8 ML core (already believed

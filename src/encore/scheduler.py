@@ -76,7 +76,9 @@ class Scheduler:
                 audit.append({"event": "execution", "customer_id": action.customer_id,
                               "attempt_id": aid, "at_hour": action.execute_at_hour,
                               "outcome": "success" if success else "failure",
-                              "amount_paise": action.amount_paise, "policy": policy.name})
+                              "amount_paise": action.amount_paise, "policy": policy.name,
+                              "original_decline": str(state.original_decline),
+                              "attempt_no": action.attempt_no})
                 if success:
                     result.recovered_paise += action.amount_paise
                     break
