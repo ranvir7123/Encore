@@ -194,5 +194,14 @@ edited after the fact.
   `n_customers=300, seeds=[1, 2, 3]` world used by the sibling holdout test
   produces proportionally more failures (53 x 12 = 636) and clears the bar
   with margin.
-- **Fix:** commit hash after.
+- **Fix:** `4098fd7`. Changed `tests/test_model.py::test_training_data_has_both_labels`
+  to call `generate_training_data(R0, n_customers=300, seeds=[1, 2, 3])` — the
+  exact world size the sibling `test_model_beats_coin_flip_on_holdout_split`
+  test already proved yields 636 rows (>500 with margin, deterministic),
+  with a one-line comment pointing back to this entry. The `> 500` and
+  label-balance assertions were left unchanged; no threshold, seed, or
+  simulator code was touched. All 4 tests in `tests/test_model.py` pass;
+  full suite (42 tests) and `ruff check .` both pass — see
+  `.superpowers/sdd/encore-build-plan/task-8-report.md` for the real command
+  output.
 - **Still open:** nothing.
