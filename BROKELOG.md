@@ -675,7 +675,7 @@ edited after the fact.
   switch on `featurize`/`generate_training_data`/`LearnedPolicy`, defaulting
   to `True` so previously published numbers stay byte-reproducible (pinned by
   `tests/test_model.py::test_payday_flag_default_is_backward_compatible`).
-  Suite 74 -> 76. Fix commit: see the commit carrying this entry.
+  Suite 74 -> 76. Fix commit: `2a460a0`.
 - **Still open:** (a) **The step function is a simulator artifact and must be
   disclosed as one.** `Portfolio.debit` succeeds deterministically once the
   balance clears, so post-payday success is exactly 100% and pre-payday is
