@@ -35,3 +35,22 @@ def test_learned_policy_parks_hopeless_low_amounts():
     failed = FailedDebit("cust_0001", "c1", 19900, DeclineCode.INSUFFICIENT_FUNDS, 100)
     state = SequenceState(DeclineCode.INSUFFICIENT_FUNDS, 0, 0, None, False)
     assert pol.propose(failed, state, 100) is None  # everything parks at that cost
+
+
+def test_payday_flag_false_drops_exactly_one_feature():
+    """The de-biased variant must differ from the default by the hardcoded
+    (1, 2, 7, 8) indicator ALONE -- day_of_month has to survive, or the model
+    is not merely de-biased, it is blinded to timing entirely."""
+    full = featurize(DeclineCode.INSUFFICIENT_FUNDS, 100, 1, 49900, payday_flag=True)
+    lean = featurize(DeclineCode.INSUFFICIENT_FUNDS, 100, 1, 49900, payday_flag=False)
+    assert len(full) == len(lean) + 1
+    assert full[:-1] == lean  # identical prefix: only the last feature is dropped
+
+
+def test_payday_flag_default_is_backward_compatible():
+    """Default must stay byte-identical to the pre-BROKELOG-9 feature vector,
+    so the flagged model's published numbers remain reproducible."""
+    from encore.domain import day_of_month
+    v = featurize(DeclineCode.INSUFFICIENT_FUNDS, 100, 1, 49900)
+    assert v == featurize(DeclineCode.INSUFFICIENT_FUNDS, 100, 1, 49900, payday_flag=True)
+    assert v[-1] == float(day_of_month(100) in (1, 2, 7, 8))

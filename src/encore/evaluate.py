@@ -96,6 +96,15 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
     # One model, trained once on r0_base/seeds 1-5, reused across every cell.
     X, y = generate_training_data(REGIMES["r0_base"], n_customers=n_customers, seeds=TRAIN_SEEDS)
     clf = train(X, y)
+
+    # Second model, identical except the hardcoded (1, 2, 7, 8) near-payday
+    # indicator is removed from the feature vector. day_of_month survives, so
+    # payday timing stays learnable -- it just stops being pre-answered with
+    # r0_base's calendar. BROKELOG entry 9 is why this exists: the flagged
+    # model loses to a uniform-random control under distribution shift.
+    X_np, y_np = generate_training_data(REGIMES["r0_base"], n_customers=n_customers,
+                                        seeds=TRAIN_SEEDS, payday_flag=False)
+    clf_nopayday = train(X_np, y_np)
     wall_cfg = WallConfig()
 
     results: dict[str, dict] = {}
@@ -109,6 +118,8 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
             FixedSpread10(),
             RandomInHorizon(random.Random(RANDOM_BASELINE_SEED)),
             LearnedPolicy(clf),
+            LearnedPolicy(clf_nopayday, payday_flag=False,
+                          name="encore_learned_nopayday"),
         ]
         for policy in policies:
             cell = f"{regime_name}/{policy.name}"

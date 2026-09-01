@@ -625,3 +625,67 @@ edited after the fact.
   single most interesting open question in the project. (d)
   `docs/what-broke-essay.md` and `docs/demo-script.md` Beat 3 both quote the
   superseded numbers.
+
+### 2026-09-01 — Removing the hardcoded payday flag did NOT fix the model; the real failure is a two-day near-miss at a step function
+
+- **What happened:** BROKELOG entry 9 blamed `featurize`'s hardcoded
+  `day_of_month in (1, 2, 7, 8)` indicator for the learned policy losing to a
+  uniform-random control under distribution shift. A de-biased model was
+  trained with that feature removed (`payday_flag=False`; `day_of_month`
+  retained, so payday timing stays learnable). **It did not fix anything.**
+  The hypothesis in entry 9 was wrong, or at best a small part of the story.
+- **Evidence:** full 6-policy matrix, seeds `100,101,102`, 500 customers,
+  recovered per 1000 failures:
+  ```
+                             r0_base      r1_shifted    r2_no_signal
+  random_in_horizon        182,359.09      220,425.10     118,831.58
+  encore_learned           188,259.09      150,291.50     107,677.63
+  encore_learned_nopayday  188,259.09      154,867.75     107,411.84
+  ```
+  De-biasing moved `r1_shifted` from 150,291 to 154,868 -- a 3% gain that
+  leaves the model still at 0.70x of random. `r0_base` is unchanged to the
+  paisa and `r2_no_signal` is marginally worse. The flag was not the cause.
+  Diagnostic that found the real one -- executions by day-of-month in
+  `r1_shifted` (salary_days `[3, 10, 25]`, weights `[0.2, 0.3, 0.5]`):
+  ```
+  encore_learned    day   18  19  20  21  22  23  24  25  26  27  28
+                    tried 44  10  37 165  24 219 138  14  56  46  20
+                    win%  14%  0%  0%  2%  0%  3%  0%100%100%100%100%
+
+  random_in_horizon tried 42  40  49  39  39  39  63  55  48  38  33
+                    win%   5% 10%  2%  3%  0%  0%  0%100%100%100%100%
+  ```
+- **Root cause:** success is a **step function at day 25**, and the model
+  learned the right *region* on the wrong *side* of it. It concentrates 384
+  of ~1,064 retries on days 21 and 23 -- two days before salary lands, where
+  the observed success rate is 2-3% -- and places only 14 on day 25 itself.
+  Summed over days 25-30 (the 100%-success zone) the model lands ~151
+  retries against the random control's ~237. That ~86-retry gap, against a
+  wall-enforced budget of 3 retries per customer, is the whole 47%
+  difference. The failure is therefore not "the model ignores payday" (it
+  targets the payday window slightly MORE often than random: 23.9% vs 20.8%
+  of retries in days 24-27) but "the model is systematically ~2 days early,
+  and earliness at a step function is indistinguishable from being wrong."
+  A confident near-miss is worse than no opinion at all, because it spends a
+  capped budget on days that are reliably empty while a uniform draw at
+  least samples the far side of the cliff.
+- **Fix:** none applied. Both models are kept in the matrix
+  (`encore_learned`, `encore_learned_nopayday`) so the negative result is
+  reproducible rather than quietly dropped. `payday_flag` is a documented
+  switch on `featurize`/`generate_training_data`/`LearnedPolicy`, defaulting
+  to `True` so previously published numbers stay byte-reproducible (pinned by
+  `tests/test_model.py::test_payday_flag_default_is_backward_compatible`).
+  Suite 74 -> 76. Fix commit: see the commit carrying this entry.
+- **Still open:** (a) **The step function is a simulator artifact and must be
+  disclosed as one.** `Portfolio.debit` succeeds deterministically once the
+  balance clears, so post-payday success is exactly 100% and pre-payday is
+  near 0%. Real balances do not behave like this, and the sharpness of the
+  cliff almost certainly overstates how badly a 2-day error would be punished
+  in production. The *direction* of the finding is sound; the magnitude is
+  simulator-flattered. (b) Why the model settles on days 21-23 specifically
+  is not established -- plausibly an r0_base-derived "later in the month is
+  better" pattern truncated by the 10-day search horizon, but that is a
+  hypothesis, not a measurement. (c) An asymmetric-loss retrain (penalising
+  early retries harder than late ones) is the obvious next experiment and has
+  not been run. (d) README, `docs/demo-script.md` Beat 3, and
+  `docs/what-broke-essay.md` all still quote the superseded 3-policy matrix.
