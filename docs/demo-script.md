@@ -43,61 +43,81 @@ README's framing (section 1, "The problem"):
 
 ## Beat 2 — Tests are the floor (0:20–1:00, 40s, 15s terminal)
 
-Command (run live, ~9 seconds to execute):
+Command (run live, ~10 seconds to execute):
 
 ```
 uv run pytest -q
 ```
 
-Expected on-screen result — re-measured on a warm venv immediately before
-this revision:
+Expected on-screen result — re-measured after the horizon-matched-baseline
+work (BROKELOG 9 and 10) took the suite from 61 to 76:
 
 ```
-.............................................................            [100%]
-61 passed in 8.76s
+76 passed in 10.54s
 ```
 
-Wall-clock varies with venv warmth: a cold run that has to build the venv
-first took 12.76s. Both are fine on camera; do one throwaway run before
-recording so the take is the warm one.
+Wall-clock varies with venv warmth; a cold run that has to build the venv
+first is slower. Do one throwaway run before recording so the take is warm.
 
-Say while the dots scroll: "61 tests, green, in seconds. 24 of those live
+Say while the dots scroll: "76 tests, green, in seconds. 24 of those live
 in `tests/test_wall.py` alone — that's the compliance wall's adversarial
-suite, and it's the file we come back to in a minute." (Confirmed
-independently: `uv run pytest tests/test_wall.py -q` → `24 passed in 0.03s`.)
+suite, and it's the file we come back to in a minute. Another 13 are in
+`tests/test_policies.py`, and those exist to prove our own baseline is
+*fair* — that the control searches the identical candidate set the model
+does, so we can't accidentally rig the comparison in our favour."
+(Confirmed independently: `uv run pytest tests/test_wall.py -q` →
+`24 passed in 0.04s`; `tests/test_policies.py -q` → `13 passed in 1.09s`.)
 
-## Beat 3 — The scoreboard (1:00–2:10, 70s, 20s terminal)
+## Beat 3 — The scoreboard, and the experiment that undercut it (1:00–2:10, 70s, 20s terminal)
 
-**Pre-bake this before recording** — the eval run takes several minutes for
-1,500 simulated customers across 3 regimes x 3 policies x 3 seeds. Do not
-run it live. Show the command on screen, say "pre-baked," and cut to the
-already-produced output:
+**Pre-bake this before recording** — the eval now runs 6 policies x 3
+regimes x 3 seeds at 500 customers (54 world simulations) and takes several
+minutes. Do not run it live. Show the command, say "pre-baked," cut to the
+output:
 
 ```
 uv run encore eval --seeds 100,101,102 --customers 500
 ```
 
-Say: "This is the real command — I ran it before recording because it
-takes a few minutes, not because it's hiding anything. Here's what it
-wrote." Then run the fast one live (~1 second):
+Then run the fast one live (~1 second), which reads the pre-baked
+`runs/eval.json` and writes `runs/scoreboard.html`:
 
 ```
 uv run encore report
 ```
 
-This reads the pre-baked `runs/eval.json` and writes `runs/scoreboard.html`.
-Open it in a browser and show:
+Open it in a browser. **Do not lead with the learned policy.** Lead with
+the control — it is the more interesting number and a judge will find it
+anyway:
 
-- The metrics table (same numbers as `README.md` section 2): `encore_learned`
-  recovering ₹1,88,259.09 per 1000 failures in `r0_base` against
-  `fixed_t123`'s ₹68,040.91 and `immediate_x3`'s ₹0.00, with
-  `recovery_per_attempt_paise` favoring `encore_learned` in every regime.
-- The **violations row: `0` in every one of the 9 regime x policy cells,
-  each aggregated over 3 seeds (27 runs).** Say explicitly: "zero
-  violations, but that's a post-hoc replay
-  through the wall — it can't re-check cooldown from the audit log alone,
-  because the log doesn't record a sequence's previous attempt hour. That
-  caveat is in the README, not hidden."
+- `encore_learned` recovers ₹1,50,291.50 per 1000 failures on `r1_shifted`
+  against `fixed_t123`'s ₹52,774.63 — **2.85x the industry-standard
+  schedule**, which is the claim that survives.
+- `random_in_horizon` — the same retry budget, the same candidate hours,
+  picked **at random** — recovers **₹2,20,425.10**. Say it out loud:
+  *"random beats our model by 47% on the held-out regime, using fewer
+  attempts. We built that control ourselves, and it's in the repo."*
+- **Violations: `0` in every one of the 18 regime x policy cells, each
+  aggregated over 3 seeds (54 runs).** Then the caveat, unprompted: "that's
+  a post-hoc replay through the wall — it can't re-check cooldown from the
+  audit log alone, because the log doesn't record a sequence's previous
+  attempt hour. Cooldown is enforced live. The caveat is in the README, not
+  hidden."
+
+If there is time, land the mechanism — it is the best 15 seconds in the
+video. Success in `r1_shifted` is a step function at day 25:
+
+```
+encore_learned    day   21  22  23  24  25  26  27
+                  tried 165  24 219 138  14  56  46
+                  win%    2%  0%  3%  0%100%100%100%
+```
+
+*"The model isn't missing payday — it's aiming at it and landing two days
+early, every time. With only three retries allowed per customer, two days
+early is the same as completely wrong. We thought a hardcoded feature was
+the cause, removed it, retrained — and we were wrong about that too. Both
+are in BROKELOG, entries 9 and 10, written before either fix."*
 
 ## Beat 4 — The wall is the star (2:10–2:55, 45s, 10s terminal)
 
@@ -238,10 +258,14 @@ the original run, not something `--n 5` reproduces today.
 
 No terminal. Talking head or title card:
 
-> Every failure while building this is in `BROKELOG.md` — seven entries,
-> append-only, written before the fix, not after. Read `README.md`'s
+> Every failure while building this is in `BROKELOG.md` — ten entries,
+> append-only, written before the fix, not after. The last two are the ones
+> that matter: we built the control that could kill our own headline, it
+> did, and then our explanation for why was wrong too. Read `README.md`'s
 > limitations section for what this can't prove: no UPI checkout path on
 > this test account, a violations count that can't re-verify cooldown from
-> the audit log alone, and an `r2_no_signal` win that's likely a search-
-> horizon artifact, not learned timing. This is modeled on NPCI's publicly
+> the audit log alone, and a step function in the simulator that makes our
+> own headline finding look sharper than production would. What survives is
+> the wall and a 2.85x beat on the industry-standard schedule. What doesn't
+> is the claim that the ML earned it. This is modeled on NPCI's publicly
 > reported retry rules, with citations. We never claim compliant.
