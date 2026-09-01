@@ -548,3 +548,81 @@ edited after the fact.
   make the code re-attempt them and be rejected mid-recording. There is no
   guard in the code enforcing this; it is documented convention only. Each
   future re-record must raise `--n` past the high-water mark by hand.
+
+### 2026-09-01 — The horizon-matched control beats the learned policy; the 2.85x was search width, not learned timing
+
+- **What happened:** `README.md` section 7 already suspected that
+  `encore_learned`'s win was "likely a horizon artifact" because
+  `LearnedPolicy` searches a 10-day candidate window while `FixedSchedule`
+  only tries T+1/T+2/T+3. The horizon-matched baselines were built to settle
+  it. They settled it against us. A control that draws its retry hour
+  **uniformly at random** from the identical 10-day candidate set beats the
+  trained model on 2 of 3 regimes — including `r1_shifted`, the held-out
+  distribution-shift regime the headline number is quoted from.
+- **Evidence:** full matrix, seeds `100,101,102`, 500 customers each,
+  recovered per 1000 failures:
+  ```
+  === r1_shifted ===
+  fixed_t123           Rs 52,774.63   (1.00x)
+  fixed_spread10       Rs143,001.35   (2.71x)
+  random_in_horizon    Rs220,425.10   (4.18x)   <-- control
+  encore_learned       Rs150,291.50   (2.85x)   <-- the headline claim
+  ```
+  Not a brute-force win: in `r1_shifted` the control recovered MORE money
+  using FEWER attempts (~1,327 vs ~1,436 attempts per 1000 failures), and
+  `max_contacts_per_customer` is 3 for both — the wall caps everyone
+  identically. Repeated across four independent rng streams
+  (`20260901, 11111, 22222, 33333`) via a monkeypatch of
+  `evaluate.RANDOM_BASELINE_SEED`, with no production code altered:
+  ```
+  regime          random/learned ratio, by rng seed
+  r0_base         0.97  0.99  0.98  0.99   -> learned wins, by 1-3%, 4/4
+  r1_shifted      1.47  1.48  1.47  1.51   -> RANDOM wins, by 47-51%, 4/4
+  r2_no_signal    1.10  1.12  1.10  1.07   -> RANDOM wins, by 7-12%, 4/4
+  ```
+- **Root cause:** two separate mistakes, one methodological and one in the
+  feature set.
+  (1) *Methodological:* the only baselines ever run were `immediate_x3` and
+  `fixed_t123`, both of which can see at most 3 days past the failure.
+  Search **width** and ranking **quality** were therefore never separated,
+  and every reported multiple silently bundled them. `fixed_spread10` alone
+  (a dumb T+3/T+6/T+9 heuristic with no model at all) recovers 2.71x in
+  `r1_shifted` — i.e. most of the claimed 2.85x is reachable with no
+  learning whatsoever.
+  (2) *Feature set:* `model.featurize` includes
+  `float(day_of_month(candidate_hour) in (1, 2, 7, 8))`, commented
+  "near-payday flag". That is a hardcoded human prior, not a learned one,
+  and it is tuned to `r0_base`, whose `salary_days=[1, 7, 15]` carry weights
+  `[0.6, 0.3, 0.1]` — so 90% of customers are paid on day 1 or day 7 and the
+  flag is a free correct answer. `r1_shifted` sets
+  `salary_days=[3, 10, 25]` with weights `[0.2, 0.3, 0.5]`, putting **50% of
+  customers on day 25**. The model's strongest feature then points
+  confidently at the wrong end of the month, while a uniform draw over 10
+  days catches day 25 by accident. This is why the model is not merely
+  unhelpful under shift but actively *worse than chance*: it has a
+  confident, wrong prior, and chance does not.
+  The `r0_base` result is real but small and is the one place the prior is
+  correct — learned wins by 1-3% there, using ~20% fewer attempts
+  (441 vs 550 per 1000 failures), which is a genuine efficiency gain on the
+  training distribution and nothing more.
+- **Fix:** no fix to the model or the claim yet — this entry records the
+  finding before any of that, per project rule. What *is* committed is the
+  experiment that produced it: `policies.FixedSpread10` and
+  `policies.RandomInHorizon`, `legal_candidate_hours` and
+  `cooldown_aware_start` moved from `model.py` into `policies.py` so the
+  control provably searches the same candidate set from the same starting
+  hour (pinned by `tests/test_policies.py::
+  test_learned_and_control_share_one_candidate_function`, which asserts
+  identity, not equality), and both controls added to the eval matrix.
+  13 new tests, suite 61 -> 74. Fix commit: see the commit carrying this
+  entry.
+- **Still open:** (a) `README.md`'s results table and section 2 headline
+  still quote the 3-policy matrix and must be rewritten around the 5-policy
+  one — the honest surviving claim is "beats the industry-standard T+1/T+2/T+3
+  schedule 2.85x", NOT "learned when customers have money". (b) `runs/eval.json`
+  in the main checkout is stale (3 policies). (c) Whether a model without the
+  hardcoded `(1, 2, 7, 8)` flag — forced to learn payday timing from
+  `day_of_month` alone — would survive the shift is untested, and is now the
+  single most interesting open question in the project. (d)
+  `docs/what-broke-essay.md` and `docs/demo-script.md` Beat 3 both quote the
+  superseded numbers.

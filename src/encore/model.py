@@ -14,6 +14,7 @@ from encore.domain import (
     day_of_month,
     hour_of_day,
 )
+from encore.policies import cooldown_aware_start, legal_candidate_hours
 from encore.simulator import Portfolio, RegimeConfig
 from encore.wall import SequenceState, WallConfig
 
@@ -34,10 +35,10 @@ def featurize(decline: DeclineCode, candidate_hour: int, attempt_no: int,
     ]
 
 
-def _legal_candidates(failure_hour: int, cfg: WallConfig) -> list[int]:
-    horizon = range(failure_hour + 1, failure_hour + 10 * HOURS_PER_DAY)
-    return [h for h in horizon
-            if cfg.window_start_hour <= hour_of_day(h) or hour_of_day(h) < cfg.window_end_hour]
+# Moved to policies.py so the horizon-matched baselines search the IDENTICAL
+# candidate set this policy does -- see policies.legal_candidate_hours. Alias
+# kept so this module's own call sites read unchanged.
+_legal_candidates = legal_candidate_hours
 
 
 def generate_training_data(regime: RegimeConfig, n_customers: int,
@@ -87,9 +88,7 @@ class LearnedPolicy:
         if state.retries_attempted >= self._cfg.max_retries_per_cycle:
             return None
         # start past the wall's cooldown so denied proposals don't burn retry budget; the wall still enforces
-        start_hour = max(now_hour + 1,
-                         (state.last_attempt_hour + self._cfg.cooldown_hours)
-                         if state.last_attempt_hour is not None else now_hour + 1)
+        start_hour = cooldown_aware_start(state, now_hour, self._cfg)
         candidates = _legal_candidates(start_hour - 1, self._cfg)
         # training labels only exist for attempt_no=1; passing live attempt numbers
         # would query the model out of distribution on a feature it never saw vary
