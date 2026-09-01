@@ -497,3 +497,54 @@ edited after the fact.
   `execute_at_hour` entirely (a human pays the link whenever they click
   through). Fix commit: `7c0b956`.
 - **Still open:** nothing.
+
+### 2026-09-01 — The demo script's own command now creates zero payment links
+
+- **What happened:** `docs/demo-script.md`'s Beat 5 instructs the operator to
+  record with `PYTHONUNBUFFERED=1 uv run python -m encore.demo --n 4
+  --timeout 240`. Re-verified during handoff review: that command creates
+  **no** payment links at all. Every one of the four attempts is
+  short-circuited as an already-executed ledger hit, so there is nothing on
+  screen to pay and the beat is unfilmable as written.
+- **Evidence:** `runs/demo_ledger.txt` holds exactly four consumed
+  `reference_id`s, and they are exactly the first four soft-decline failures
+  `_first_n_soft_failures(4)` returns. Enumerated against the live ledger and
+  the seed-100 kill set:
+  ```
+    n= 1  cust_0113  INR   999.00  LEDGER-HIT (skipped, no link)
+    n= 2  cust_0403  INR   199.00  LEDGER-HIT + WALL-DENIED sequence_killed
+    n= 3  cust_0092  INR   999.00  LEDGER-HIT (skipped, no link)
+    n= 4  cust_0417  INR   199.00  LEDGER-HIT + WALL-DENIED sequence_killed
+    n= 5  cust_0447  INR   199.00  FRESH -> creates a REAL payment link
+  ```
+  A second, independent instance of the same failure: running
+  `--dry-run --n 24` and then `--dry-run --n 6` produced six skip lines and
+  zero created links, because the dry-run keeps its *own* accumulating
+  ledger (`runs/demo_ledger_dryrun.txt`, via `run_demo_slice`'s `_dryrun`
+  suffix) that no document mentioned.
+- **Root cause:** the four `reference_id`s in `demo_ledger.txt` were consumed
+  by the original live evidence run recorded in commit `029db48` — the very
+  run the script was written to reproduce. `AttemptLedger.already_executed`
+  is checked *before* link creation, and is permanent by design, because a
+  `reference_id` is consumed for good at Razorpay on first use. So the
+  idempotency guarantee did precisely its job and, in doing so, made its own
+  demonstration non-repeatable. Nothing in the code is wrong; the
+  documentation encoded a command whose preconditions the code had already
+  and irreversibly destroyed. The `--n` value was never re-derived after the
+  evidence run, and neither ledger was treated as demo state.
+- **Fix:** `docs/demo-script.md` Beat 5 rewritten and split — a free,
+  networkless `--dry-run --n 8` beat (5a) that shows the wall denying two
+  killed customers, preceded by a mandatory `rm -f
+  runs/demo_ledger_dryrun.txt`; and a live `--n 5 --timeout 120` beat (5b)
+  that creates exactly one fresh link (`cust_0447`, ₹199.00). The four
+  ledger-hit lines are now narrated as the idempotency guarantee firing on
+  camera rather than treated as noise. Also documented that polling is
+  sequential per link at the full `--timeout`, so creating 7 links to pay 1
+  costs ~24 minutes of dead terminal — the reason `--n 5` and not a larger
+  value. Recorded here before fixing, per project rule. Fix commit: see the
+  commit that follows this entry.
+- **Still open:** `runs/demo_ledger.txt` must never be deleted — its
+  `reference_id`s are permanently consumed at Razorpay and a delete would
+  make the code re-attempt them and be rejected mid-recording. There is no
+  guard in the code enforcing this; it is documented convention only. Each
+  future re-record must raise `--n` past the high-water mark by hand.
