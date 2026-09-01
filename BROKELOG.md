@@ -614,8 +614,7 @@ edited after the fact.
   hour (pinned by `tests/test_policies.py::
   test_learned_and_control_share_one_candidate_function`, which asserts
   identity, not equality), and both controls added to the eval matrix.
-  13 new tests, suite 61 -> 74. Fix commit: see the commit carrying this
-  entry.
+  13 new tests, suite 61 -> 74. Fix commit: `5e6fd2c`.
 - **Still open:** (a) `README.md`'s results table and section 2 headline
   still quote the 3-policy matrix and must be rewritten around the 5-policy
   one — the honest surviving claim is "beats the industry-standard T+1/T+2/T+3
