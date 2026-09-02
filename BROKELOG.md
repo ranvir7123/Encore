@@ -804,7 +804,7 @@ edited after the fact.
   `max_hour` on `legal_candidate_hours` and all five proposing policies, and
   `tests/test_evaluate.py::test_no_policy_executes_past_the_simulated_horizon`
   asserts on the audit log so a future policy bypassing
-  `legal_candidate_hours` still trips it. Suite 76 -> 89. Fix commit: `PENDING`.
+  `legal_candidate_hours` still trips it. Suite 76 -> 89. Fix commit: `4acb1b2`.
 - **Still open:** the headline claims are unchanged and now rest on a scored
   window with no free wins in it. The control still beats the learned policy
   on 2 of 3 regimes (`r1_shifted` 1.46x, `r2_no_signal` 1.09x) and still
