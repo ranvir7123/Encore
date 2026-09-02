@@ -8,6 +8,12 @@ class DeclineCode(StrEnum):
     INSUFFICIENT_FUNDS = "insufficient_funds"
     ISSUER_DOWN = "issuer_down"
     GATEWAY_TIMEOUT = "gateway_timeout"
+    # What Razorpay test mode actually reports for a declined card: a generic
+    # gateway failure at authorization (error_reason "payment_failed"), even
+    # for the documented insufficient-funds test card -- BROKELOG entry 13.
+    # Retryable inside the cap, as Razorpay's own T+1/T+2/T+3 treats any
+    # failed charge. Never produced by the simulator; never in model.SOFT_CODES.
+    GENERIC_DECLINE = "generic_decline"
     # Hard declines: retrying is a compliance violation, not an optimization.
     MANDATE_REVOKED = "mandate_revoked"
     ACCOUNT_CLOSED = "account_closed"

@@ -10,11 +10,15 @@ IST_OFFSET_S = 5 * 3600 + 30 * 60
 # Razorpay `error_reason` -> our decline taxonomy. Explicit and short on
 # purpose: a reason not in this table is an EXCEPTION the agent reports (parked,
 # reason "unmapped_error_reason"), never a guess about whether a retry is legal.
-# Strings from razorpay.com/docs/errors/error-reasons; the A0 spike in
-# docs/spike-notes.md records which ones this account actually produces.
+# Strings from razorpay.com/docs/errors/error-reasons. What this account
+# ACTUALLY produces (docs/spike-notes.md, A0; BROKELOG entry 13): the
+# documented insufficient-funds test card comes back as "payment_failed", the
+# generic gateway-authorization failure, so that string maps to the
+# retryable GENERIC_DECLINE rather than being dropped as unmapped.
 ERROR_REASON_TO_DECLINE: dict[str, DeclineCode] = {
     "insufficient_funds": DeclineCode.INSUFFICIENT_FUNDS,
     "gateway_technical_error": DeclineCode.GATEWAY_TIMEOUT,
+    "payment_failed": DeclineCode.GENERIC_DECLINE,
 }
 
 

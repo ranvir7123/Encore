@@ -1,7 +1,7 @@
 """Failure sources: the simulated cycle and real Razorpay failed payments
 must yield the same FailedDebit shape, and anything we cannot classify must
 surface as an exception rather than a guessed retry."""
-from encore.domain import DeclineCode
+from encore.domain import HARD_DECLINES, DeclineCode
 from encore.simulator import Portfolio, RegimeConfig
 from encore.sources import (
     IST_OFFSET_S,
@@ -33,6 +33,9 @@ def _payment(**over):
 def test_mapping_is_explicit_and_unknown_is_none():
     assert map_error_reason("insufficient_funds") is DeclineCode.INSUFFICIENT_FUNDS
     assert map_error_reason("gateway_technical_error") is DeclineCode.GATEWAY_TIMEOUT
+    # what the insufficient-funds test card really reports (BROKELOG entry 13)
+    assert map_error_reason("payment_failed") is DeclineCode.GENERIC_DECLINE
+    assert DeclineCode.GENERIC_DECLINE not in HARD_DECLINES
     assert map_error_reason("card_declined") is None
     assert map_error_reason(None) is None
 
