@@ -14,6 +14,7 @@ from encore.policies import (
     SEARCH_HORIZON_DAYS,
     FixedSchedule,
     FixedSpread10,
+    ImmediateRetry3,
     RandomInHorizon,
     cooldown_aware_start,
     legal_candidate_hours,
@@ -113,3 +114,78 @@ def test_fixed_spread10_reaches_further_than_fixed_t123():
 def test_all_proposals_are_retries_not_nudges():
     for policy in (FixedSpread10(), RandomInHorizon(random.Random(5))):
         assert policy.propose(_failed(), _state(), 100).kind is ActionKind.RETRY
+
+
+# --- horizon clamp (BROKELOG 2026-09-02) -------------------------------------
+# A retry scheduled past the end of the evaluated period is unobservable, not
+# successful: Portfolio.debit falls back to the live end-of-simulation balance
+# when balance_history has no entry for that day, which turns every such retry
+# into a near-guaranteed win no policy earned. max_hour is an EXCLUSIVE bound,
+# matching range() and balance_history's 0-based day index.
+
+def test_candidates_respect_an_exclusive_max_hour():
+    bound = 100 + 5 * 24
+    clamped = legal_candidate_hours(100, CFG, max_hour=bound)
+    assert clamped, "clamping must not empty the candidate set at this bound"
+    assert max(clamped) < bound
+    assert all(h < bound for h in clamped)
+
+
+def test_max_hour_only_removes_candidates_never_adds():
+    """The clamp must be a pure filter over the unclamped set, so the learned
+    policy and the control still search identical spaces once both are given
+    the same bound."""
+    bound = 100 + 5 * 24
+    unclamped = legal_candidate_hours(100, CFG)
+    clamped = legal_candidate_hours(100, CFG, max_hour=bound)
+    assert set(clamped) <= set(unclamped)
+    assert clamped == [h for h in unclamped if h < bound]
+
+
+def test_default_max_hour_is_none_and_changes_nothing():
+    """Backward compatibility: every number published before the clamp existed
+    must stay byte-reproducible when max_hour is not supplied."""
+    assert legal_candidate_hours(100, CFG) == legal_candidate_hours(100, CFG, max_hour=None)
+
+
+def test_candidates_empty_rather_than_wrap_when_bound_is_already_passed():
+    assert legal_candidate_hours(100, CFG, max_hour=50) == []
+
+
+@pytest.mark.parametrize("policy_factory", [
+    lambda bound: RandomInHorizon(random.Random(0), max_hour=bound),
+    lambda bound: FixedSpread10(max_hour=bound),
+    lambda bound: FixedSchedule(max_hour=bound),
+    lambda bound: ImmediateRetry3(max_hour=bound),
+])
+def test_no_policy_proposes_past_its_max_hour(policy_factory):
+    """Every stdlib policy honours the bound, not just the ones that happened
+    to cross it in one regime -- fixed_spread10 and fixed_t123 both reach past
+    day 30 from a late-month failure too."""
+    bound = 30 * 24
+    policy = policy_factory(bound)
+    # a failure late in the simulated month: T+3/T+6/T+9 and the 10-day
+    # random horizon all reach past the end of the world from here
+    failed = _failed(at_hour=28 * 24 + 6)
+    for retries in range(CFG.max_retries_per_cycle):
+        action = policy.propose(failed, _state(retries=retries), failed.at_hour)
+        if action is not None:
+            assert action.execute_at_hour < bound, (
+                f"{policy.name} proposed hour {action.execute_at_hour} "
+                f"(day {action.execute_at_hour // 24}) past the bound {bound}"
+            )
+
+
+@pytest.mark.parametrize("policy_factory", [
+    lambda: RandomInHorizon(random.Random(0)),
+    lambda: FixedSpread10(),
+    lambda: FixedSchedule(),
+    lambda: ImmediateRetry3(),
+])
+def test_policies_are_unclamped_by_default(policy_factory):
+    """Without max_hour the policies keep their pre-clamp behaviour exactly,
+    so the clamp can never silently change a run that did not ask for it."""
+    failed = _failed(at_hour=28 * 24 + 6)
+    unbounded = policy_factory().propose(failed, _state(retries=2), failed.at_hour)
+    assert unbounded is not None
+    assert unbounded.execute_at_hour > 0

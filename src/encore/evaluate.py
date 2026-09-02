@@ -4,7 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from encore.audit import AttemptLedger, AuditLog
-from encore.domain import ActionKind, DeclineCode, ProposedAction
+from encore.domain import HOURS_PER_DAY, ActionKind, DeclineCode, ProposedAction
 from encore.model import LearnedPolicy, generate_training_data, train
 from encore.parser import ReplyIntent, parse_keyword
 from encore.policies import (
@@ -40,6 +40,13 @@ EVAL_SEED_FLOOR = 100
 # deterministic because the seed list iterates in a fixed order. Disjoint from
 # the training rng (seed * 7919 in model.generate_training_data).
 RANDOM_BASELINE_SEED = 20260901
+
+# Exclusive upper bound on any proposed retry hour, in hours. run_cycle(30, ...)
+# below simulates exactly 30 days, so balance_history holds day indices 0-29 and
+# a retry at day >= 30 finds no entry -- Portfolio.debit then falls back to the
+# live end-of-simulation balance and the retry succeeds for free. Every policy
+# gets the SAME bound, so the horizon match is preserved. BROKELOG 2026-09-02.
+EVAL_HORIZON_HOURS = 30 * HOURS_PER_DAY
 
 
 def count_violations(records: list[dict]) -> int:
@@ -113,13 +120,15 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
         # both reach as far into the month as LearnedPolicy does, so a win over
         # them cannot be explained by search width alone. See policies.py.
         policies: list[Policy] = [
-            ImmediateRetry3(),
-            FixedSchedule(),
-            FixedSpread10(),
-            RandomInHorizon(random.Random(RANDOM_BASELINE_SEED)),
-            LearnedPolicy(clf),
+            ImmediateRetry3(max_hour=EVAL_HORIZON_HOURS),
+            FixedSchedule(max_hour=EVAL_HORIZON_HOURS),
+            FixedSpread10(max_hour=EVAL_HORIZON_HOURS),
+            RandomInHorizon(random.Random(RANDOM_BASELINE_SEED),
+                            max_hour=EVAL_HORIZON_HOURS),
+            LearnedPolicy(clf, max_hour=EVAL_HORIZON_HOURS),
             LearnedPolicy(clf_nopayday, payday_flag=False,
-                          name="encore_learned_nopayday"),
+                          name="encore_learned_nopayday",
+                          max_hour=EVAL_HORIZON_HOURS),
         ]
         for policy in policies:
             cell = f"{regime_name}/{policy.name}"

@@ -98,10 +98,15 @@ class LearnedPolicy:
     name = "encore_learned"
 
     def __init__(self, clf, cost_per_attempt_paise: int = 500,
-                 payday_flag: bool = True, name: str | None = None) -> None:
+                 payday_flag: bool = True, name: str | None = None,
+                 max_hour: int | None = None) -> None:
         self.clf = clf
         self.cost = cost_per_attempt_paise
         self._cfg = WallConfig()
+        # exclusive end of the evaluated period; see policies.legal_candidate_hours
+        # and BROKELOG 2026-09-02. Must be the SAME bound the control gets, or
+        # the horizon match this comparison rests on is broken again.
+        self.max_hour = max_hour
         # must match how clf was trained, or inference silently reads a
         # different feature vector than fit() saw
         self.payday_flag = payday_flag
@@ -114,7 +119,7 @@ class LearnedPolicy:
             return None
         # start past the wall's cooldown so denied proposals don't burn retry budget; the wall still enforces
         start_hour = cooldown_aware_start(state, now_hour, self._cfg)
-        candidates = _legal_candidates(start_hour - 1, self._cfg)
+        candidates = _legal_candidates(start_hour - 1, self._cfg, max_hour=self.max_hour)
         # training labels only exist for attempt_no=1; passing live attempt numbers
         # would query the model out of distribution on a feature it never saw vary
         feats = [featurize(failed.decline, h, 1, failed.amount_paise, failed.at_hour,

@@ -689,3 +689,127 @@ edited after the fact.
   early retries harder than late ones) is the obvious next experiment and has
   not been run. (d) README, `docs/demo-script.md` Beat 3, and
   `docs/what-broke-essay.md` all still quote the superseded 3-policy matrix.
+
+### 2026-09-02 — The control's margin was partly free wins past the end of the simulated month
+- **What happened:** While building the day-of-month cliff chart for the web
+  site, the `random_in_horizon` series showed a 100% success rate on
+  day-of-month 1-5 — the far side of a wrap-around, not the payday window.
+  Retries are proposed up to `SEARCH_HORIZON_DAYS = 10` past the failure, but
+  `run_cycle(30, ...)` only simulates 30 days, so a late-month failure can be
+  retried at an absolute day >= 30. `Portfolio.debit` indexes
+  `balance_history[at_hour // 24]` and, when that index is out of range,
+  falls back to the live `c.balance_paise` — which at end-of-simulation is
+  post-salary-credit and almost always clears the amount. Every retry landing
+  past the window is therefore a near-guaranteed success that no policy
+  earned. `encore_learned` never proposes into that dead zone; the uniform
+  control does, because it draws uniformly over the whole horizon.
+- **Evidence:** grouping every `execution` record in `runs/*_audit.jsonl` by
+  whether `at_hour // 24 >= 30`:
+
+  ```
+  r1_shifted / encore_learned     inside window 1064 won 234 (22.0%)
+                                  beyond day 30     0 won   0
+  r1_shifted / random_in_horizon  inside window  931 won 313 (33.6%)
+                                  beyond day 30    52 won  52 (100.0%)
+  ```
+
+  Subtracting only the beyond-window recoveries from each cell's published
+  `recovered_per_1000_failures_paise`:
+
+  ```
+  cell                            published/1000   free  corrected/1000   drop
+  r1_shifted/random_in_horizon      Rs2,20,425.10    52    Rs1,89,186.23  14.2%
+  r2_no_signal/random_in_horizon    Rs1,18,831.58    32    Rs1,00,715.79  15.2%
+  r2_no_signal/fixed_spread10         Rs81,938.16     3      Rs78,915.79   3.7%
+  every other cell (15 of 18)                  --     0               --   0.0%
+  ```
+
+  Effect on the two ratios the project reports:
+
+  ```
+  regime         random/learned            learned/fixed_t123
+  r0_base        0.969 -> 0.969 (no change)   2.767 -> 2.767 (no change)
+  r1_shifted     1.467 -> 1.259               2.848 -> 2.848 (no change)
+  r2_no_signal   1.104 -> 0.935  (FLIPS)      3.166 -> 3.166 (no change)
+  ```
+
+- **Root cause:** two independent gaps that only bite in combination.
+  (a) `policies.legal_candidate_hours` clamps candidates to the wall's
+  execution window but not to the simulated horizon, so hours past the end of
+  the world are legal proposals. (b) `Portfolio.debit` and
+  `Portfolio.would_succeed` treat "no balance history for this day" as
+  "use the live balance" rather than as "unknown/out of range". The fallback
+  was written for far-future queries and is documented as deliberate, but it
+  silently converts an out-of-range retry into a free success. The learned
+  policy is insulated by accident, not by design: its ranking simply never
+  chooses those hours, so the bias lands entirely on the uniform control that
+  the whole refutation depends on.
+- **Fix:** not yet applied — logged before fixing, per CLAUDE.md. The choice
+  between clamping proposals to the simulated horizon, extending
+  `balance_history` to cover the full search horizon, and treating
+  out-of-range days as a hard failure is a design decision with different
+  downstream effects, and it rewrites README, the essay, and the demo script.
+- **Still open:** the refutation survives but shrinks and narrows. Random
+  still beats the learned policy on the held-out `r1_shifted` by 26% rather
+  than 47%, but "beats the model on 2 of 3 regimes" becomes "on 1 of 3" —
+  `r2_no_signal` flips to the model by 7%. The claim that never depended on
+  this — 2.85x over the industry-standard T+1/T+2/T+3 schedule with zero
+  violations in 18 cells — is arithmetically untouched, because neither
+  `encore_learned` nor `fixed_t123` scores a single beyond-window win in any
+  regime. The four-RNG-stream reproduction in entry 9 (ratios 1.47/1.48/
+  1.47/1.51) was measuring the inflated quantity and needs re-running after
+  the fix.
+
+### 2026-09-02 — The predicted size of the horizon-clamp correction was wrong by an order of magnitude
+- **What happened:** Entry 11 predicted, from a subtraction over the audit
+  logs, that clamping retries to the simulated horizon would drop
+  `r1_shifted/random_in_horizon` from ₹2,20,425.10 to ₹1,89,186.23 (-14.2%)
+  and flip `r2_no_signal` from the control to the model. The clamp was
+  implemented and the matrix re-run. Neither happened. The control lost 0.7%
+  on `r1_shifted` and 1.3% on `r2_no_signal`, and `r2_no_signal` did not flip.
+- **Evidence:** same seeds (100,101,102), same 500 customers, before and after
+  the clamp:
+
+  ```
+  cell                              pre-clamp        clamped   change
+  r0_base/random_in_horizon      Rs1,82,359.09  Rs1,86,900.00    +2.5%
+  r1_shifted/random_in_horizon   Rs2,20,425.10  Rs2,18,948.72    -0.7%
+  r2_no_signal/fixed_spread10      Rs81,938.16    Rs78,915.79    -3.7%
+  r2_no_signal/random_in_horizon Rs1,18,831.58  Rs1,17,259.21    -1.3%
+  all 14 other cells                        --             --     0.0%
+
+  regime         random/learned          learned/fixed_t123
+  r0_base        0.969 -> 0.993          2.767 -> 2.767
+  r1_shifted     1.467 -> 1.457          2.848 -> 2.848
+  r2_no_signal   1.104 -> 1.089          3.166 -> 3.166
+  ```
+
+  `uv run pytest -q` -> 89 passed. Violations still 0 across all 18 cells.
+- **Root cause:** the subtraction treated a beyond-window win as a win that
+  would simply disappear. It does not. A retry is a *slot*, not an outcome:
+  when the clamp removes the out-of-range hour, the policy proposes an
+  in-window hour instead and frequently succeeds there. The wall's 3-retry
+  budget is what is scarce, not the individual hour, so the correct
+  counterfactual for 52 removed free wins is "52 retries relocated", not "52
+  recoveries deleted". `r0_base/random_in_horizon` even went *up* 2.5% — it
+  had zero beyond-window executions, so its only change is that the shared
+  `random.Random(RANDOM_BASELINE_SEED)` stream is now consumed differently
+  once other regimes stop drawing out-of-range hours. Post-hoc subtraction
+  over an audit log cannot see either effect; only a re-run can.
+- **Fix:** the clamp itself is kept — it is correct on its own merits, since a
+  retry past the evaluated period is unobservable and must not be scored. What
+  is corrected here is entry 11's **"Still open"** paragraph, which asserted
+  the flip as fact. Per CLAUDE.md past entries are never edited, so this entry
+  supersedes it. `EVAL_HORIZON_HOURS = 30 * HOURS_PER_DAY` in `evaluate.py`,
+  `max_hour` on `legal_candidate_hours` and all five proposing policies, and
+  `tests/test_evaluate.py::test_no_policy_executes_past_the_simulated_horizon`
+  asserts on the audit log so a future policy bypassing
+  `legal_candidate_hours` still trips it. Suite 76 -> 89. Fix commit: `PENDING`.
+- **Still open:** the headline claims are unchanged and now rest on a scored
+  window with no free wins in it. The control still beats the learned policy
+  on 2 of 3 regimes (`r1_shifted` 1.46x, `r2_no_signal` 1.09x) and still
+  loses narrowly on the regime it trained on (`r0_base` 0.99x). Entry 9's
+  four-RNG-stream reproduction has not been re-run against the clamp; the
+  main-stream ratio moved only 1.467 -> 1.457, so the conclusion is not in
+  doubt, but the specific numbers 1.47/1.48/1.47/1.51 are pre-clamp and
+  should be relabelled or regenerated before they are quoted again.
