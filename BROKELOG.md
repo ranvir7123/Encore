@@ -884,3 +884,42 @@ edited after the fact.
   checkout within the window; the demo script says so. The three links from
   this take remain on the account (one paid, two `created`), counted against
   the 30-link test-mode cap.
+
+### 2026-09-02 — Take 2: the customer paid the ORIGINAL demand after the nudge, and the agent kept waiting on its own link
+- **What happened:** second live take (`encore agent --live 1 --batch 50
+  --speed 6 --timeout 600 --window-s 1200`). Detection found the fresh
+  failure (`pay_TXDSEWfVtIS9GV`, cust_0098, INR 299.00) and the agent created
+  recovery link `plink_TXDTTeY7Q8yapK` with a printed pay-by time. The
+  operator then paid -- on the ORIGINAL link they had failed a minute
+  earlier, not the recovery link. Razorpay captured `pay_TXDV9saQEzX5yb`
+  (INR 299.00, notes `customer_id: cust_0098`) at 20:54:44; the recovery
+  link stayed `created`, the agent polled it until 21:03:07 and recorded
+  `no_terminal_status_within_timeout`. The batch recovered INR 9,486.00 of
+  INR 27,349.00; the real rail again shows INR 0.00.
+- **Evidence:** `GET /v1/payments` for the last 30 minutes at 20:56:35:
+
+  ```
+  ('pay_TXDV9saQEzX5yb', 'captured', 29900, 'cust_0098', '20:54:44')
+  ('pay_TXDUevf5jebJGV', 'failed',   29900, 'cust_0098', '20:54:16')
+  ('pay_TXDSEWfVtIS9GV', 'failed',   29900, 'cust_0098', '20:51:59')
+  ```
+
+  and `fetch_payment_link("plink_TXDTTeY7Q8yapK")` at the same moment:
+  `status: created, amount_paid: 0, payments: []`. Kept under `runs/take2/`.
+- **Root cause:** the agent only ever watched the link it had created. A
+  customer who pays the original demand after a nudge is the most ordinary
+  outcome of dunning -- Stripe's and Chargebee's stop the retry schedule the
+  moment the invoice is paid -- and this loop had no way to see it, so a real
+  recovery was booked as a timeout. The two checkout pages also looked alike
+  (same customer, same amount), which is how the operator picked the wrong
+  one.
+- **Fix:** a capture watch. While a live customer's sequence is open, the
+  agent polls `GET /v1/payments` for a captured payment carrying that
+  customer's notes since the failure; if one appears the sequence ends as
+  recovered with a `self_cured` audit event, no retry executed. The two
+  links now carry checkout titles that cannot be confused: "FAIL THIS ONE"
+  on the original, "PAY THIS ONE" on the recovery. Commit hash backfilled
+  below.
+- **Still open:** the recovery link that was never paid stays `created` on
+  the account; the agent does not cancel it. Two takes, four real links, and
+  zero real-rail recoveries recorded so far -- take 3 has to land one.
