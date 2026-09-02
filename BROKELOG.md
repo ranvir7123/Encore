@@ -813,3 +813,41 @@ edited after the fact.
   main-stream ratio moved only 1.467 -> 1.457, so the conclusion is not in
   doubt, but the specific numbers 1.47/1.48/1.47/1.51 are pre-clamp and
   should be relabelled or regenerated before they are quoted again.
+
+### 2026-09-02 — The insufficient-funds test card fails with error_reason "payment_failed", not "insufficient_funds"
+- **What happened:** Razorpay's test-card page lists `4100 2800 0008 0001` as
+  the card that declines for insufficient funds. Three test-mode payments made
+  with it on Payment Links -- the A0 spike link `plink_TX8TUTJx4sCmkX` and the
+  two `encore seed-live` originals for `cust_0005` and `cust_0030` -- all came
+  back from `GET /v1/payments` as `status: "failed"`, `error_code:
+  "BAD_REQUEST_ERROR"`, `error_source: "gateway"`, `error_step:
+  "payment_authorization"`, `error_description: "Payment failed"` and
+  `error_reason: "payment_failed"`. The reason string the docs promise never
+  appeared. With the two-entry table in `sources.py`
+  (`insufficient_funds`, `gateway_technical_error`), all three land in
+  `RazorpayFailureSource.unmapped`, and `encore agent --live 3` would have
+  parked every real failure as `unmapped_error_reason` and retried nothing.
+- **Evidence:** `uv run python scripts/spike_failed_payments.py list`, ~19:00
+  IST:
+
+  ```
+  {"id": "pay_TXCHLEzZwfcdOY", "status": "failed", "amount": 99900, "method": "card", ..., "error_code": "BAD_REQUEST_ERROR", "error_description": "Payment failed", "error_source": "gateway", "error_step": "payment_authorization", "error_reason": "payment_failed", "notes": {"kind": "original", "cycle_id": "live", "customer_id": "cust_0030"}}
+  {"id": "pay_TXCGLl4N2QOjcv", ..., "error_reason": "payment_failed", "notes": {"kind": "original", "cycle_id": "live", "customer_id": "cust_0005"}}
+  {"id": "pay_TXCExIcrL6fcrD", ..., "amount": 19900, "error_reason": "payment_failed", "notes": {"cycle_id": "spike", "customer_id": "cust_spike"}}
+  ```
+
+  The same listing settled the other A0 question in our favour: the
+  `notes` set on each Payment Link arrived on the payment entity intact.
+- **Root cause:** on this test account, card declines reach the Payments API
+  as one generic gateway authorization failure; the per-reason test cards do
+  not surface their reason through `error_reason`. Whether they do on
+  Standard Checkout or in live mode was not tested. The mapping table
+  assumed the documented string would round-trip.
+- **Fix:** `payment_failed` maps to a new soft `DeclineCode.GENERIC_DECLINE`
+  -- retryable inside the wall's cap, which is how Razorpay's own T+1/T+2/T+3
+  treats any failed subscription charge -- rather than being dropped. The
+  simulator never produces it and `model.SOFT_CODES` is untouched, so no
+  eval cell moves. Commit hash backfilled below.
+- **Still open:** what a real live-mode insufficient-funds decline reports as
+  `error_reason` is unverified, so the agent cannot yet tell "no money" from
+  "bank said no" on the real rail; README §7 says so.
