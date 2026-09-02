@@ -189,3 +189,57 @@ def test_policies_are_unclamped_by_default(policy_factory):
     unbounded = policy_factory().propose(failed, _state(retries=2), failed.at_hour)
     assert unbounded is not None
     assert unbounded.execute_at_hour > 0
+
+
+# --- promise-aware policy -------------------------------------------------------
+from encore.domain import day_of_month
+from encore.policies import PromiseAwarePolicy, promised_retry_hour
+
+
+def _promise_policy(max_hour=720):
+    return PromiseAwarePolicy(FixedSpread10(max_hour=max_hour), max_hour=max_hour)
+
+
+def test_promised_retry_hour_is_2300_on_the_first_matching_day_at_or_after_start():
+    h = promised_retry_hour(25, start_hour=100, max_hour=720)
+    assert h == 24 * 24 + 23 and day_of_month(h) == 25
+    assert promised_retry_hour(25, start_hour=24 * 24 + 23, max_hour=720) == 24 * 24 + 23
+    # the next day-25 is a month away, past the evaluated window
+    assert promised_retry_hour(25, start_hour=25 * 24, max_hour=720) is None
+
+
+def test_promise_aware_targets_the_promised_day_when_a_promise_exists():
+    policy = _promise_policy()
+    policy.promises[_failed().customer_id] = 25
+    action = policy.propose(_failed(), _state(), 100)
+    assert day_of_month(action.execute_at_hour) == 25 and action.execute_at_hour % 24 == 23
+    assert decide(action, _state(), CFG).allowed
+
+
+def test_promise_aware_equals_fallback_without_a_promise():
+    policy = _promise_policy()
+    assert policy.propose(_failed(), _state(), 100) == FixedSpread10(max_hour=720).propose(
+        _failed(), _state(), 100)
+
+
+def test_promise_aware_falls_back_when_the_promised_day_is_past_the_window():
+    policy = _promise_policy(max_hour=200)
+    policy.promises[_failed().customer_id] = 25
+    assert policy.propose(_failed(), _state(), 100) == FixedSpread10(max_hour=200).propose(
+        _failed(), _state(), 100)
+
+
+def test_promise_aware_never_proposes_before_the_cooldown_after_a_miss():
+    policy = _promise_policy()
+    policy.promises[_failed().customer_id] = 25
+    missed_at = 24 * 24 + 23
+    state = _state(retries=1, last=missed_at)
+    action = policy.propose(_failed(), state, missed_at)
+    assert action is not None and action.execute_at_hour >= missed_at + CFG.cooldown_hours
+    assert decide(action, state, CFG).allowed
+
+
+def test_promise_aware_stops_at_the_retry_cap():
+    policy = _promise_policy()
+    policy.promises[_failed().customer_id] = 25
+    assert policy.propose(_failed(), _state(retries=CFG.max_retries_per_cycle), 100) is None
