@@ -1,23 +1,29 @@
 """Task 12: `encore` CLI entry point (pyproject.toml: encore = "encore.cli:main").
 
-Four subcommands, argparse-based:
+Five subcommands, argparse-based:
   encore eval       --seeds 100,101,102 --customers 500   -> runs the matrix, writes runs/eval.json
   encore report                                            -> reads runs/eval.json, writes runs/scoreboard.html
   encore parse-eval                                        -> keyword vs haiku vs sonnet accuracy on data/reply_eval.jsonl
   encore demo       --n 3 --timeout 300 --dry-run          -> Task 11's Razorpay demo slice
+  encore web                                               -> writes web/data/*.json + web/py/*.py
 """
 import argparse
 import functools
+import glob
+import json
 import os
+import shutil
 from pathlib import Path
 
 from dotenv import load_dotenv
 
+from encore.audit import AuditLog
 from encore.demo import run_demo_slice
 from encore.evaluate import run_matrix
 from encore.parser import evaluate as parser_evaluate
 from encore.parser import parse_keyword, parse_llm
 from encore.report import write_scoreboard
+from encore.webdata import build_cliff, build_results
 
 
 def cmd_eval(args: argparse.Namespace) -> None:
@@ -53,6 +59,72 @@ def cmd_parse_eval(args: argparse.Namespace) -> None:
         result = parser_evaluate(functools.partial(parse_llm, model=model), eval_path)
         print(f"{model:14s}: accuracy_kind={result['accuracy_kind']:.3f} "
               f"accuracy_full={result['accuracy_full']:.3f} (n={result['n']})")
+
+
+# The modules Pyodide fetches and imports at runtime (Tier A). Every one of
+# them imports only the standard library plus its siblings here -- that is what
+# makes the browser tier possible at all, so the list is deliberately explicit
+# rather than a glob over src/encore: adding model.py to it would silently drag
+# scikit-learn into the page and break the deploy at load time, not at build.
+TIER_A_MODULES = ["__init__", "domain", "wall", "audit", "simulator", "policies", "scheduler"]
+
+# The cliff chart is about the held-out distribution shift specifically.
+CLIFF_REGIME = "r1_shifted"
+CLIFF_POLICIES = ["encore_learned", "random_in_horizon"]
+
+
+def _read_executions(audit_dir: Path, regime: str, policy: str) -> list[dict]:
+    """All execution records for one regime/policy, across every seed's audit
+    log. Returns [] when nothing matches, so a partial runs/ directory produces
+    an empty chart with a visible provenance line rather than a crash."""
+    records: list[dict] = []
+    pattern = str(audit_dir / f"{regime}__{policy}__s*_audit.jsonl")
+    for path in sorted(glob.glob(pattern)):
+        records.extend(AuditLog(Path(path)).read_all())
+    return records
+
+
+def cmd_web(args: argparse.Namespace) -> None:
+    eval_path = Path(args.eval_path)
+    if not eval_path.exists():
+        raise SystemExit(
+            f"{eval_path} not found -- run `encore eval --seeds {args.seeds} "
+            f"--customers {args.customers}` first. runs/ is gitignored scratch, so a "
+            "fresh clone or worktree has none of it."
+        )
+    seeds = [int(s) for s in args.seeds.split(",")]
+    eval_dict = json.loads(eval_path.read_text(encoding="utf-8"))
+
+    out_dir = Path(args.out_dir)
+    data_dir = out_dir / "data"
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    results = build_results(eval_dict, seeds=seeds, customers=args.customers)
+    (data_dir / "results.json").write_text(
+        json.dumps(results, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    audit_dir = Path(args.audit_dir)
+    executions = {p: _read_executions(audit_dir, CLIFF_REGIME, p) for p in CLIFF_POLICIES}
+    cliff = build_cliff(executions, regime=CLIFF_REGIME, seeds=seeds, customers=args.customers)
+    (data_dir / "cliff.json").write_text(
+        json.dumps(cliff, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    # Copy the live modules next to the page so the deploy is self-contained:
+    # the site fetches these over HTTP and writes them into the Pyodide FS, so
+    # publishing web/ without them would 404 the whole Tier A panel.
+    py_dir = out_dir / "py"
+    py_dir.mkdir(parents=True, exist_ok=True)
+    src_dir = Path(args.src_dir)
+    for module in TIER_A_MODULES:
+        shutil.copyfile(src_dir / f"{module}.py", py_dir / f"{module}.py")
+
+    print(f"Wrote {data_dir / 'results.json'} ({results['totals']['cells']} cells, "
+          f"{results['totals']['compliance_violations']} violations)")
+    for policy in CLIFF_POLICIES:
+        series = cliff["series"][policy]
+        print(f"Wrote cliff series {policy}: {series['total_tried']} retries, "
+              f"{series['total_won']} recovered")
+    print(f"Copied {len(TIER_A_MODULES)} live modules to {py_dir}")
 
 
 def cmd_demo(args: argparse.Namespace) -> None:
@@ -94,6 +166,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_demo.add_argument("--dry-run", action="store_true",
                         help="exercise the full code path against SimulatedRail -- no network")
     p_demo.set_defaults(func=cmd_demo)
+
+    p_web = sub.add_parser("web", help="build web/data/*.json and web/py/*.py from runs/")
+    p_web.add_argument("--eval-path", default="runs/eval.json")
+    p_web.add_argument("--audit-dir", default="runs")
+    p_web.add_argument("--out-dir", default="web")
+    p_web.add_argument("--src-dir", default="src/encore")
+    p_web.add_argument("--seeds", default="100,101,102",
+                       help="seeds the eval was run with, for the provenance line")
+    p_web.add_argument("--customers", type=int, default=500,
+                       help="customers per seed the eval was run with, for the provenance line")
+    p_web.set_defaults(func=cmd_web)
 
     return parser
 
