@@ -11,6 +11,11 @@ class RegimeConfig:
     hard_decline_rate: float
     issuer_down_daily_prob: float
     uniform_credits: bool = False  # regime R2: destroys the salary-day signal
+    # Promise noise (regime R3): what the customer SAYS vs when salary lands.
+    # Both zero => no extra RNG is drawn, so every older regime's world is
+    # byte-identical (pinned by tests/test_simulator.py's digest test).
+    promise_error_days: int = 0     # promised day is off by up to +/- this many days
+    false_promise_rate: float = 0.0  # share of promises that name a random day
 
 
 @dataclass(frozen=True)
@@ -49,6 +54,9 @@ class Portfolio:
     issuer_down_hours: set[int] = field(default_factory=set)
     _replies: list[ReplyEvent] = field(default_factory=list)
     balance_history: dict[str, list[int]] = field(default_factory=dict)
+    # Separate stream for promise noise so it never perturbs failures or reply
+    # timing; None when the regime has no noise (see _promised_day).
+    _noise_rng: random.Random | None = None
 
     @classmethod
     def generate(cls, n_customers: int, regime: RegimeConfig, seed: int) -> "Portfolio":
@@ -67,7 +75,23 @@ class Portfolio:
                 billing_day=rng.randint(1, DAYS_PER_MONTH),
                 churn_intent=rng.random() < 0.05,
             )
-        return cls(customers=customers, regime=regime, rng=rng)
+        noise_rng = (random.Random(seed * 104729 + 1)
+                     if regime.promise_error_days or regime.false_promise_rate else None)
+        return cls(customers=customers, regime=regime, rng=rng, _noise_rng=noise_rng)
+
+    def _promised_day(self, true_day: int) -> int:
+        """The day the customer SAYS money arrives. Drawn from _noise_rng, a
+        stream separate from self.rng, so switching noise on changes only reply
+        text -- never which debits fail or when replies arrive."""
+        if self._noise_rng is None:
+            return true_day
+        r = self.regime
+        if r.false_promise_rate and self._noise_rng.random() < r.false_promise_rate:
+            return self._noise_rng.randint(1, DAYS_PER_MONTH)
+        if r.promise_error_days:
+            off = self._noise_rng.randint(-r.promise_error_days, r.promise_error_days)
+            return (true_day - 1 + off) % DAYS_PER_MONTH + 1
+        return true_day
 
     def _advance_hour(self, h: int) -> None:
         if h % HOURS_PER_DAY == 0:  # once per simulated day
@@ -144,7 +168,7 @@ class Portfolio:
                             tmpl = self.rng.choice(REPLY_TEMPLATES)
                             self._replies.append(ReplyEvent(
                                 c.customer_id, h + self.rng.randint(4, 48),
-                                tmpl.format(day=c.salary_day),
+                                tmpl.format(day=self._promised_day(c.salary_day)),
                             ))
         return failures
 

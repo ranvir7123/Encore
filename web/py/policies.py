@@ -1,7 +1,15 @@
 import random
 from typing import Protocol
 
-from encore.domain import HOURS_PER_DAY, ActionKind, FailedDebit, ProposedAction, hour_of_day
+from encore.domain import (
+    DAYS_PER_MONTH,
+    HOURS_PER_DAY,
+    ActionKind,
+    FailedDebit,
+    ProposedAction,
+    day_of_month,
+    hour_of_day,
+)
 from encore.wall import SequenceState, WallConfig
 
 # LearnedPolicy scans this many days of candidate retry hours per attempt.
@@ -154,3 +162,66 @@ class RandomInHorizon:
         return ProposedAction(ActionKind.RETRY, failed.customer_id, failed.cycle_id,
                               failed.amount_paise, self.rng.choice(candidates),
                               state.retries_attempted + 1)
+
+
+def promised_retry_hour(day: int, start_hour: int, max_hour: int | None) -> int | None:
+    """23:00 on the first calendar day at or after start_hour whose day-of-month
+    is `day`, or None if no such hour exists strictly before max_hour. 23:00 is
+    inside the wall's 22:00-07:00 window and after that day's salary credit,
+    which the simulator posts at hour 0 of the day."""
+    d = start_hour // HOURS_PER_DAY
+    last_day = (max_hour // HOURS_PER_DAY) if max_hour is not None else d + DAYS_PER_MONTH
+    while d < last_day:
+        h = d * HOURS_PER_DAY + 23
+        if h >= start_hour and day_of_month(h) == day and (max_hour is None or h < max_hour):
+            return h
+        d += 1
+    return None
+
+
+class PromiseAwarePolicy:
+    """Retries on the day the customer said money arrives; otherwise defers to
+    a deterministic fallback.
+
+    The promise comes from the reply parser (a pydantic ReplyIntent), which is
+    the only place a language model can ever influence timing -- and it still
+    never touches legality: every proposal goes through wall.decide() like any
+    other. `promises` is per-run state set by whoever parsed the replies
+    (evaluate.run_matrix per seed, agent.RecoveryAgent as replies arrive), so
+    the Policy protocol and the other policies stay untouched.
+    """
+    name = "promise_aware"
+
+    def __init__(self, fallback: Policy, cfg: WallConfig | None = None,
+                 max_hour: int | None = None, name: str | None = None) -> None:
+        self.fallback = fallback
+        self._cfg = cfg or WallConfig()
+        self.max_hour = max_hour
+        self.promises: dict[str, int] = {}
+        if name is not None:
+            self.name = name
+
+    def propose(self, failed, state, now_hour):
+        if state.retries_attempted >= self._cfg.max_retries_per_cycle:
+            return None
+        start = cooldown_aware_start(state, now_hour, self._cfg)
+        day = self.promises.get(failed.customer_id)
+        if day is not None:
+            h = promised_retry_hour(day, start, self.max_hour)
+            if h is not None:
+                return ProposedAction(ActionKind.RETRY, failed.customer_id, failed.cycle_id,
+                                      failed.amount_paise, h, state.retries_attempted + 1)
+        action = self.fallback.propose(failed, state, now_hour)
+        if action is None or action.execute_at_hour >= start:
+            return action
+        # The fallback's failure-anchored schedule has already passed -- a missed
+        # promise consumed that slot. Re-anchor to the cooldown start at 23:00
+        # so no retry budget is burnt on a proposal the wall would deny as
+        # cooldown_active. Still clamped to the evaluated window.
+        h = (start // HOURS_PER_DAY) * HOURS_PER_DAY + 23
+        if h < start:
+            h += HOURS_PER_DAY
+        if self.max_hour is not None and h >= self.max_hour:
+            return None
+        return ProposedAction(ActionKind.RETRY, failed.customer_id, failed.cycle_id,
+                              failed.amount_paise, h, state.retries_attempted + 1)
