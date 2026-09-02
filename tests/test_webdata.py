@@ -40,7 +40,7 @@ def _full_eval(**overrides) -> dict:
 
 def test_results_carry_every_regime_policy_cell():
     out = build_results(_full_eval(), **PROV)
-    assert len(out["cells"]) == len(REGIME_ORDER) * len(POLICY_ORDER) == 28
+    assert len(out["cells"]) == len(REGIME_ORDER) * len(POLICY_ORDER) == 32
     for regime in REGIME_ORDER:
         for policy in POLICY_ORDER:
             assert f"{regime}/{policy}" in out["cells"]
@@ -84,6 +84,7 @@ def test_policy_order_matches_the_matrix_evaluate_actually_runs():
         LearnedPolicy(None).name,
         LearnedPolicy(None, payday_flag=False, name="encore_learned_nopayday").name,
         PromiseAwarePolicy(FixedSpread10()).name,
+        PromiseAwarePolicy(RandomInHorizon(random.Random(0)), name="promise_aware_random").name,
     ]
     assert sorted(built) == sorted(POLICY_ORDER)
     assert sorted(REGIMES) == sorted(REGIME_ORDER)
@@ -102,7 +103,7 @@ def test_money_stays_integer_paise_and_formatting_is_a_separate_field():
 def test_totals_report_violations_across_every_cell():
     ev = _full_eval(**{"r2_no_signal/fixed_t123": _cell(violations=2)})
     out = build_results(ev, **PROV)
-    assert out["totals"]["cells"] == 28
+    assert out["totals"]["cells"] == 32
     assert out["totals"]["compliance_violations"] == 2
 
 

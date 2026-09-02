@@ -74,10 +74,11 @@ def test_no_policy_executes_past_the_simulated_horizon(tmp_path: Path):
     )
 
 
-def test_matrix_has_28_cells_and_promise_aware_is_present(tmp_path: Path):
+def test_matrix_has_32_cells_and_both_promise_policies_are_present(tmp_path: Path):
     results = run_matrix(seeds=[100], out_dir=tmp_path, n_customers=60)
-    assert len(results) == 28
+    assert len(results) == 32
     assert "r3_noisy_promise/promise_aware" in results
+    assert "r3_noisy_promise/promise_aware_random" in results
     assert all(cell["compliance_violations"] == 0 for cell in results.values())
 
 

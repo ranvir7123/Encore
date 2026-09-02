@@ -193,11 +193,13 @@ class PromiseAwarePolicy:
     name = "promise_aware"
 
     def __init__(self, fallback: Policy, cfg: WallConfig | None = None,
-                 max_hour: int | None = None) -> None:
+                 max_hour: int | None = None, name: str | None = None) -> None:
         self.fallback = fallback
         self._cfg = cfg or WallConfig()
         self.max_hour = max_hour
         self.promises: dict[str, int] = {}
+        if name is not None:
+            self.name = name
 
     def propose(self, failed, state, now_hour):
         if state.retries_attempted >= self._cfg.max_retries_per_cycle:

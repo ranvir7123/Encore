@@ -28,6 +28,7 @@ POLICY_ORDER = [
     "encore_learned",
     "encore_learned_nopayday",
     "promise_aware",
+    "promise_aware_random",
 ]
 
 # Tier A vs Tier B (see docs/superpowers/specs/2026-09-01-encore-web-design.md).
@@ -36,7 +37,8 @@ POLICY_ORDER = [
 LIVE_POLICIES = ["immediate_x3", "fixed_t123", "fixed_spread10", "random_in_horizon"]
 # promise_aware is stdlib but needs the reply parser (pydantic), which is
 # not a Tier A module in the browser -- so it is precomputed, not live.
-PRECOMPUTED_POLICIES = ["encore_learned", "encore_learned_nopayday", "promise_aware"]
+PRECOMPUTED_POLICIES = ["encore_learned", "encore_learned_nopayday", "promise_aware",
+                        "promise_aware_random"]
 
 # The claim that survives is measured against this policy: Razorpay's
 # documented T+1/T+2/T+3 subscription retry shape.

@@ -139,6 +139,13 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
             # fixed_spread10 (its own fallback) the delta isolates the promise.
             PromiseAwarePolicy(FixedSpread10(max_hour=EVAL_HORIZON_HOURS),
                                max_hour=EVAL_HORIZON_HOURS),
+            # Same promise handling, but the fallback is the uniform-random
+            # control -- the strongest no-model policy in the table. Its own
+            # seeded stream, disjoint from random_in_horizon's, so the two rows
+            # are independent draws.
+            PromiseAwarePolicy(RandomInHorizon(random.Random(RANDOM_BASELINE_SEED + 1),
+                                               max_hour=EVAL_HORIZON_HOURS),
+                               max_hour=EVAL_HORIZON_HOURS, name="promise_aware_random"),
         ]
         for policy in policies:
             cell = f"{regime_name}/{policy.name}"
