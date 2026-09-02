@@ -22,7 +22,6 @@ Never delete or edit past entries. The buildathon essay is assembled from this f
 - wall.py stays pure: no I/O, no clocks, no randomness. If you need one, pass it in.
 - No LLM call on the money path. Parser output goes through pydantic, then the wall.
 - All randomness from seeded random.Random instances passed explicitly.
-- Every public repo commit message is written for a judge's eyes.
 - Run `uv run pytest -q` and `uv run ruff check .` before every commit.
 
 ## Verification
