@@ -43,3 +43,38 @@ def test_churn_intent_diverges_oracle_from_debit():
     at_hour = 100
     assert p.would_succeed(c.customer_id, at_hour) is False
     assert p.debit(c.customer_id, at_hour) is None
+
+
+# --- promise noise (regime R3) -------------------------------------------------
+# The digest below was computed on the simulator BEFORE promise_error_days /
+# false_promise_rate existed (commit 5e54b3f): seed 100, 200 customers, r0_base,
+# every failure's (customer, decline, hour) and every reply's (customer, hour,
+# text). If it ever changes, the 18 published eval cells are no longer the
+# same worlds and every number in README must be regenerated.
+import hashlib
+
+PINNED_PRE_NOISE_DIGEST = "2f57720d28e10d038192ec9d0df19c7405c8fad04d67c9fa92397078d2204e03"
+
+
+def _digest(regime, seed=100, n=200):
+    p = Portfolio.generate(n, regime, seed=seed)
+    f = p.run_cycle(30, "snap")
+    payload = [(x.customer_id, str(x.decline), x.at_hour) for x in f] + \
+              [(r.customer_id, r.at_hour, r.text) for r in p.reply_events()]
+    return hashlib.sha256(repr(payload).encode()).hexdigest()
+
+
+def test_regimes_without_noise_fields_are_byte_identical_to_the_pre_noise_simulator():
+    assert _digest(RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05)) == PINNED_PRE_NOISE_DIGEST
+
+
+def test_noise_fields_change_promised_days_but_nothing_else():
+    clean = RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05)
+    noisy = RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05,
+                         promise_error_days=2, false_promise_rate=0.3)
+    a, b = Portfolio.generate(200, clean, seed=100), Portfolio.generate(200, noisy, seed=100)
+    fa, fb = a.run_cycle(30, "c"), b.run_cycle(30, "c")
+    assert [(x.customer_id, x.at_hour) for x in fa] == [(x.customer_id, x.at_hour) for x in fb]
+    ra, rb = a.reply_events(), b.reply_events()
+    assert [(r.customer_id, r.at_hour) for r in ra] == [(r.customer_id, r.at_hour) for r in rb]
+    assert any(x.text != y.text for x, y in zip(ra, rb, strict=True))
