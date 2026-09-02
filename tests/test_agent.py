@@ -111,3 +111,38 @@ def test_nudge_is_sent_once_per_failure_and_gated_by_the_wall(tmp_path):
     result = agent.run(failures, [])
     assert result.nudges_sent == len(failures)
     assert sum(1 for r in agent.records if r["event"] == "nudge") == len(failures)
+
+
+class PendingRail:
+    """A live rail whose link is never paid -- the take-2 situation."""
+    name = "razorpay_test_mode"
+
+    def execute(self, action):
+        return "pending"
+
+    def poll(self, action):
+        return "pending"
+
+    def receipt(self, action):
+        return {"link_id": "plink_fake", "short_url": "u", "status": "created"}
+
+
+def test_customer_who_pays_the_original_after_the_nudge_is_recovered_without_a_retry(tmp_path):
+    p, failures = _world()
+    f = next(x for x in failures if x.decline is DeclineCode.INSUFFICIENT_FUNDS)
+    calls = {"n": 0}
+
+    def watch(ids):
+        calls["n"] += 1
+        if calls["n"] >= 2:
+            return {f.customer_id: {"payment_id": "pay_self", "amount_paise": f.amount_paise}}
+        return {}
+
+    agent, _ = _agent(tmp_path, p, live_rail=PendingRail(),
+                      live_customers=frozenset({f.customer_id}), capture_watch=watch,
+                      poll_interval_s=0.0, timeout_s=10_000.0)
+    result = agent.run([f], [])
+    assert result.self_cured == 1 and result.recovered_paise == f.amount_paise
+    assert not [r for r in agent.records if r["event"] == "execution"]
+    assert [r["event"] for r in agent.records if r["event"] in ("self_cured", "park")] == ["self_cured"]
+    assert next(r for r in agent.records if r["event"] == "self_cured")["payment_id"] == "pay_self"

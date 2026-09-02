@@ -84,3 +84,16 @@ def test_simulated_source_equals_run_cycle():
     a = Portfolio.generate(100, R0, seed=7)
     b = Portfolio.generate(100, R0, seed=7)
     assert SimulatedFailureSource(a, "c1").failures() == b.run_cycle(30, "c1")
+
+
+def test_capture_watch_returns_only_captured_payments_for_asked_customers():
+    from encore.sources import RazorpayCaptureWatch
+
+    items = [_payment(id="pay_a", status="captured", notes={"customer_id": "cust_0098"}),
+             _payment(id="pay_b", status="failed", notes={"customer_id": "cust_0098"}),
+             _payment(id="pay_c", status="captured", notes={"customer_id": "cust_0001"}),
+             _payment(id="pay_d", status="captured", notes={})]
+    watch = RazorpayCaptureWatch(FakeClient(items), ANCHOR)
+    assert watch.captured({"cust_0098", "cust_0042"}, ANCHOR + 3600) == {
+        "cust_0098": {"payment_id": "pay_a", "amount_paise": 19900,
+                      "created_at": ANCHOR + 14 * 3600}}

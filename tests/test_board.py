@@ -50,3 +50,15 @@ def test_render_board_is_html_with_rupees_and_refresh(tmp_path: Path):
     write_board(tmp_path / "board.html", build_board(RECORDS, AT_RISK), "p")
     text = (tmp_path / "board.html").read_text(encoding="utf-8")
     assert text.startswith("<!doctype html>") and not (tmp_path / "board.html.tmp").exists()
+
+
+def test_self_cured_counts_as_recovered_without_an_attempt_and_closes_the_link():
+    recs = RECORDS + [{"event": "self_cured", "customer_id": "c1", "amount_paise": 19900,
+                       "payment_id": "pay_self", "rail": "razorpay_test_mode",
+                       "policy": "promise_aware"}]
+    b = build_board(recs, AT_RISK)
+    assert b["recovered_paise"] == 29900 + 19900 and b["attempts"] == 1 and b["self_cured"] == 1
+    assert b["in_flight"] == 0  # c1's open link no longer counts
+    rows = {c["customer_id"]: c for c in b["customers"]}
+    assert rows["c1"]["last_event"] == "recovered (paid original after nudge)"
+    assert "Paid on their own" in render_board(b, "p")

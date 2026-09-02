@@ -35,7 +35,12 @@ from encore.rails import RazorpayLinkRail, SimulatedAgentRail
 from encore.razorpay_client import RazorpayClient
 from encore.report import write_scoreboard
 from encore.simulator import Portfolio
-from encore.sources import IST_OFFSET_S, RazorpayFailureSource, SimulatedFailureSource
+from encore.sources import (
+    IST_OFFSET_S,
+    RazorpayCaptureWatch,
+    RazorpayFailureSource,
+    SimulatedFailureSource,
+)
 from encore.wall import WallConfig
 from encore.webdata import build_cliff, build_results
 from encore.webhtml import render_page
@@ -179,7 +184,7 @@ def cmd_seed_live(args: argparse.Namespace) -> None:
     for f in failures:
         ref = f"{f.customer_id}:live:original:{stamp}"
         link = client.create_payment_link(
-            f.amount_paise, f"Encore live original: {f.customer_id}", ref,
+            f.amount_paise, f"FAIL THIS ONE - Encore original debit for {f.customer_id}", ref,
             notes={"customer_id": f.customer_id, "cycle_id": "live", "kind": "original"})
         created.append({"customer_id": f.customer_id, "amount_paise": f.amount_paise,
                         "link_id": link["id"], "short_url": link["short_url"],
@@ -206,7 +211,7 @@ def cmd_agent(args: argparse.Namespace) -> None:
     world = Portfolio.generate(args.customers, REGIMES[args.regime], seed=args.seed)
     all_failures = SimulatedFailureSource(world, f"agent_s{args.seed}").failures()
 
-    live_failures, unmapped, live_rail, live_ids = [], [], None, set()
+    live_failures, unmapped, live_rail, live_ids, capture_watch = [], [], None, set(), None
     if live_n > 0:
         load_dotenv()
         client = RazorpayClient()
@@ -217,6 +222,12 @@ def cmd_agent(args: argparse.Namespace) -> None:
         unmapped = source.unmapped
         live_ids = {f.customer_id for f in live_failures}
         live_rail = RazorpayLinkRail(client)
+        watch = RazorpayCaptureWatch(client, now_ts - args.window_s)
+
+        def capture_watch(ids: set[str]) -> dict[str, dict]:
+            # a customer paying the ORIGINAL demand after the nudge is a
+            # recovery too, and ends their sequence (BROKELOG entry 15)
+            return watch.captured(ids, int(time.time()))
         print(f"Payments API: {len(live_failures)} mapped failure(s), "
               f"{len(unmapped)} unmapped, in the last {args.window_s // 60} min.")
 
@@ -251,7 +262,8 @@ def cmd_agent(args: argparse.Namespace) -> None:
     clock = SimClock(1.0 / args.speed) if args.speed > 0 else InstantClock()
     agent = RecoveryAgent(WallConfig(), policy, SimulatedAgentRail(world), audit, ledger, clock,
                           live_rail=live_rail, live_customers=frozenset(live_ids),
-                          poll_interval_s=args.interval, timeout_s=args.timeout, on_tick=on_tick)
+                          poll_interval_s=args.interval, timeout_s=args.timeout, on_tick=on_tick,
+                          capture_watch=capture_watch)
     print(f"=== Encore recovery agent{' (DRY RUN)' if dry else ''} ===\n{provenance}\n"
           f"board: {board_path}\n")
     result = agent.run(batch + live_failures, replies, unmapped)
@@ -259,7 +271,8 @@ def cmd_agent(args: argparse.Namespace) -> None:
     print(f"\nat risk     INR {result.at_risk_paise / 100:,.2f}")
     print(f"recovered   INR {result.recovered_paise / 100:,.2f}  ({rate:.1f}%)")
     print(f"attempts {result.attempts_executed}  denied {result.attempts_denied}  "
-          f"nudges {result.nudges_sent}  duplicates_blocked {result.duplicates_blocked}")
+          f"nudges {result.nudges_sent}  duplicates_blocked {result.duplicates_blocked}  "
+          f"paid_on_their_own {result.self_cured}")
     print("parked: " + (", ".join(f"{k}={v}" for k, v in sorted(result.parked.items())) or "none"))
     print(f"audit: {audit.path}  ledger: {ledger.path}  board: {board_path}")
 
@@ -316,7 +329,7 @@ def build_parser() -> argparse.ArgumentParser:
                        help="customers per seed the eval was run with, for the provenance line")
     p_web.add_argument("--template", default="web/index.template.html",
                        help="hand-written page template; measured values are substituted in")
-    p_web.add_argument("--test-count", type=int, default=148,
+    p_web.add_argument("--test-count", type=int, default=151,
                        help="suite size quoted in the hero (keep in step with `uv run pytest -q`)")
     p_web.set_defaults(func=cmd_web)
 

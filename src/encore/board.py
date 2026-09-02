@@ -18,7 +18,7 @@ def _row(customer_id: str, amount_paise: int) -> dict:
 
 def build_board(records: list[dict], at_risk_by_customer: dict[str, int]) -> dict:
     customers = {cid: _row(cid, amt) for cid, amt in at_risk_by_customer.items()}
-    recovered = attempts = nudges = replies = 0
+    recovered = attempts = nudges = replies = self_cured = 0
     denials: dict[str, int] = {}
     parked: dict[str, int] = {}
     open_links: set[str] = set()
@@ -62,6 +62,12 @@ def build_board(records: list[dict], at_risk_by_customer: dict[str, int]) -> dic
             row["last_event"] = f"parked: {r['reason']}"
         elif ev == "duplicate_blocked":
             row["last_event"] = "duplicate_blocked"
+        elif ev == "self_cured":
+            recovered += int(r["amount_paise"])
+            self_cured += 1
+            open_links = {aid for aid in open_links if not aid.startswith(f"{cid}:")}
+            row["rail"] = r.get("rail", row["rail"])
+            row["last_event"] = "recovered (paid original after nudge)"
     ordered = sorted(customers.values(), key=lambda c: (c["rail"] != LIVE_RAIL, c["customer_id"]))
     at_risk = sum(at_risk_by_customer.values())
     return {
@@ -69,6 +75,7 @@ def build_board(records: list[dict], at_risk_by_customer: dict[str, int]) -> dic
         "recovered_paise": recovered,
         "recovery_rate": (recovered / at_risk) if at_risk else 0.0,  # display only
         "in_flight": len(open_links),
+        "self_cured": self_cured,
         "attempts": attempts,
         "nudges": nudges,
         "replies": replies,
@@ -113,6 +120,7 @@ def render_board(data: dict, provenance: str, refresh_s: int = 3) -> str:
         ("Recovered", format_rupees(data["recovered_paise"]), "win"),
         ("Recovery rate", f"{data['recovery_rate'] * 100:.1f}%", ""),
         ("Links in flight", str(data["in_flight"]), ""),
+        ("Paid on their own", str(data.get("self_cured", 0)), "win"),
         ("Attempts", str(data["attempts"]), ""),
         ("Nudges / replies", f"{data['nudges']} / {data['replies']}", ""),
     ]
@@ -121,7 +129,7 @@ def render_board(data: dict, provenance: str, refresh_s: int = 3) -> str:
     rows = []
     for c in data["customers"]:
         ev = c["last_event"]
-        cls = "ok" if ev == "recovered" else ("bad" if ev.startswith("parked") else "")
+        cls = "ok" if ev.startswith("recovered") else ("bad" if ev.startswith("parked") else "")
         rail = (f"<span class='live'>{_esc(c['rail'])}</span>" if c["rail"] == LIVE_RAIL
                 else _esc(c["rail"]))
         link = (f"<a href='{_esc(c['short_url'])}'>{_esc(c['link_id'])}</a>"

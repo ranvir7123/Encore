@@ -47,8 +47,12 @@ class RazorpayLinkRail:
         aid = attempt_id(action)
         # reference_id = attempt_id, so Razorpay's own uniqueness rule backs the
         # local ledger's idempotency; notes carry the customer onto the payment.
+        # The description is the checkout page's title. Take 2's operator paid
+        # the original link instead of this one (BROKELOG entry 15), so the two
+        # pages now say which is which in their first words.
         self._links[aid] = self._client.create_payment_link(
-            action.amount_paise, f"Encore recovery: {action.customer_id} ({aid})", aid,
+            action.amount_paise, f"PAY THIS ONE - Encore recovery for {action.customer_id} ({aid})",
+            aid,
             notes={"customer_id": action.customer_id, "cycle_id": action.cycle_id,
                    "attempt_id": aid})
         return "pending"

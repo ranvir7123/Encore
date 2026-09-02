@@ -30,6 +30,7 @@ class AgentResult:
     attempts_denied: int = 0
     nudges_sent: int = 0
     duplicates_blocked: int = 0
+    self_cured: int = 0  # customers who paid the original demand after the nudge
     parked: dict[str, int] = field(default_factory=dict)
 
 
@@ -53,11 +54,16 @@ class RecoveryAgent:
                  live_rail: AgentRail | None = None,
                  live_customers: frozenset[str] = frozenset(),
                  poll_interval_s: float = 5.0, timeout_s: float = 180.0,
-                 on_tick: Callable[["RecoveryAgent", AgentResult], None] | None = None) -> None:
+                 on_tick: Callable[["RecoveryAgent", AgentResult], None] | None = None,
+                 capture_watch: Callable[[set[str]], dict[str, dict]] | None = None) -> None:
         self.cfg, self.policy, self.rail = wall_cfg, policy, rail
         self.audit, self.ledger, self.clock = audit, ledger, clock
         self.parse_fn, self.live_rail, self.live_customers = parse_fn, live_rail, live_customers
         self.poll_interval_s, self.timeout_s, self.on_tick = poll_interval_s, timeout_s, on_tick
+        # capture_watch(open live customer ids) -> {customer_id: captured payment}:
+        # the eye on customers who pay the original demand themselves.
+        self.capture_watch = capture_watch
+        self._last_cure_check: float | None = None
         self.records: list[dict] = []
         self.result = AgentResult()
 
@@ -114,6 +120,7 @@ class RecoveryAgent:
             for s in seqs.values():
                 if s.pending is not None:
                     self._poll(s, now)
+            self._check_self_cure(seqs)
             if self.on_tick:
                 self.on_tick(self, result)
             if all(s.done for s in seqs.values()):
@@ -223,6 +230,28 @@ class RecoveryAgent:
                               status="no_terminal_status_within_timeout")
             return
         self._resolve(s, s.pending, outcome, rail, now)
+
+    def _check_self_cure(self, seqs: dict[str, _Seq]) -> None:
+        """A live customer who paid the original demand after the nudge is
+        recovered without a retry: the sequence ends and any link of ours is
+        left unpaid. Rate-limited like link polling (BROKELOG entry 15)."""
+        if self.capture_watch is None:
+            return
+        open_live = {cid for cid, s in seqs.items() if not s.done and cid in self.live_customers}
+        if not open_live:
+            return
+        t = self.clock.monotonic()
+        if self._last_cure_check is not None and t - self._last_cure_check < self.poll_interval_s:
+            return
+        self._last_cure_check = t
+        for cid, pay in self.capture_watch(open_live).items():
+            s = seqs[cid]
+            s.done, s.pending, s.next_action = True, None, None
+            self.result.self_cured += 1
+            self.result.recovered_paise += s.failed.amount_paise
+            self._log({"event": "self_cured", "customer_id": cid, "cycle_id": s.failed.cycle_id,
+                       "amount_paise": s.failed.amount_paise, "payment_id": pay.get("payment_id"),
+                       "rail": "razorpay_test_mode", "policy": self.policy.name})
 
     def _resolve(self, s: _Seq, action: ProposedAction, outcome: str, rail: AgentRail,
                  now: int, status: str | None = None) -> None:

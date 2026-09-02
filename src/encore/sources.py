@@ -90,3 +90,22 @@ class RazorpayFailureSource:
             out.append(FailedDebit(cid, short, int(p["amount"]), code,
                                    sim_hour(int(p["created_at"]), self._anchor)))
         return out
+
+
+class RazorpayCaptureWatch:
+    """Customers who paid on their own after the nudge. A captured payment
+    carrying notes.customer_id, created after `since_ts`, means the original
+    demand was settled and the retry schedule must stop -- Stripe-style
+    dunning does the same the moment an invoice is paid. BROKELOG entry 15."""
+
+    def __init__(self, client, since_ts: int) -> None:
+        self._client, self._since = client, since_ts
+
+    def captured(self, customer_ids: set[str], now_ts: int) -> dict[str, dict]:
+        out: dict[str, dict] = {}
+        for p in self._client.list_payments(self._since, now_ts):
+            cid = (p.get("notes") or {}).get("customer_id")
+            if p.get("status") == "captured" and cid in customer_ids and cid not in out:
+                out[cid] = {"payment_id": p["id"], "amount_paise": int(p["amount"]),
+                            "created_at": int(p["created_at"])}
+        return out
