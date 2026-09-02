@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encore — a retry sequencer that publishes the experiment that beat it</title>
+<meta name="description" content="A failed-debit retry sequencer for Indian subscription payments. A pure-function compliance wall you can try to break in your browser, and the control experiment that refuted our own machine-learning claim.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Fira+Code:wght@400;500&family=Fira+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<link rel="stylesheet" href="styles.css">
+<script>
+  /* Applied before first paint so the chosen theme never flashes. Kept inline
+     and tiny for that reason; everything else is in app.js. */
+  try {
+    var t = localStorage.getItem("encore-theme");
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+  } catch (e) { /* private mode: fall through to the system preference */ }
+</script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="wordmark">Encore <span>/ evidence</span></div>
+  <nav aria-label="Sections">
+    <a href="#wall">The wall</a>
+    <a href="#experiment">The experiment</a>
+    <a href="#cliff" class="optional">The cliff</a>
+    <a href="https://github.com/ranvir7123/Encore" class="optional">Source</a>
+  </nav>
+  <button class="theme-toggle" type="button" id="theme-toggle" aria-label="Switch between light and dark theme">
+    <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+  </button>
+</header>
+
+<main id="main">
+
+  <!-- ================= HERO ================= -->
+  <section class="section hero wrap" id="wall">
+    <p class="eyebrow">Failed-debit retry sequencing · UPI AutoPay &amp; eNACH</p>
+    <h1>Every retry has to get past a wall that cannot be argued with.</h1>
+    <p class="lede">
+      Encore decides <em>when</em> to retry a failed subscription debit. It never decides
+      <em>whether</em> one is allowed. That question belongs to a pure function with no
+      network, no clock and no model behind it — and below, it is running in your browser
+      on the same <code>wall.py</code> the test suite exercises.
+    </p>
+
+    <div class="wall-stage" id="wall-stage" aria-hidden="true">
+      <div class="wall-status">
+        <span class="stat-allowed">allowed <b id="wall-allowed">0</b></span>
+        <span class="stat-denied">denied <b id="wall-denied">0</b></span>
+        <span id="wall-engine">engine <b>starting…</b></span>
+      </div>
+      <div class="wall-rule"></div>
+      <div class="wall-rule-label">wall.decide()</div>
+    </div>
+    <p class="visually-hidden" id="wall-a11y" role="status">
+      A decorative animation showing retry proposals being allowed or denied by the
+      compliance wall. The same decisions are reported in the results table below.
+    </p>
+
+    <div class="wall-caption">
+      <span id="wall-caption-text">Proposals stream in from the left. The wall lets them through, or sends them back with a reason code.</span>
+      <span class="tier-badge" id="wall-tier">Tier A · loading</span>
+    </div>
+
+    {{HEADLINE_FIGURES}}
+  </section>
+
+  <!-- ================= HONESTY BAND ================= -->
+  <section class="honesty">
+    <div class="wrap">
+      <div class="callout-rule"></div>
+      <p class="eyebrow">Read this before you quote a number</p>
+      <h2>We ran the control that could kill our own headline. It killed part of it.</h2>
+      <div class="prose">
+        <p>
+          The interesting claim was that a trained model learned <em>when customers have
+          money</em>. So we built <code>random_in_horizon</code>: a policy that picks its
+          retry hour uniformly at random from the identical candidate set the model ranks,
+          starting from the identical cooldown-aware hour. The only difference between them
+          is whether the ranking is a model or a coin.
+        </p>
+        <p>
+          On held-out data the coin wins by
+          <strong class="num">{{RANDOM_MARGIN}}</strong>. It is not brute force — it
+          recovered more using fewer attempts. A heuristic with no model at all
+          (<code>fixed_spread10</code>, retry at T+3, T+6, T+9) gets most of the way there
+          too, so most of our headline was available with no learning in it.
+        </p>
+        <ul class="claims">
+          <li>
+            <span class="tag tag-holds">Holds</span>
+            <span>Beats the industry-standard T+1/T+2/T+3 schedule
+              <strong class="num">{{LEARNED_RATIO}}</strong>, with
+              <strong class="num">{{VIOLATIONS}}</strong> compliance violations across all
+              <strong class="num">{{CELLS}}</strong> regime-by-policy cells.</span>
+          </li>
+          <li>
+            <span class="tag tag-dead">Does not hold</span>
+            <span>That the model learned when customers have money. On the held-out regime
+              a uniform draw over the same hours beats it.</span>
+          </li>
+        </ul>
+        <p class="note">
+          <strong>Our first explanation was wrong too.</strong> We blamed a hardcoded
+          near-payday flag in the feature vector, removed it, and retrained. The de-biased
+          model gained 3% and still lost. The real cause is below, and it is a measurement
+          problem rather than a modelling one.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= THE CLIFF ================= -->
+  <section class="section wrap" id="experiment">
+    <p class="eyebrow">The measurement · regime r1_shifted, held out from training</p>
+    <h2 id="cliff">The model is not ignoring payday. It is two days early.</h2>
+    <div class="prose">
+      <p>
+        In this regime, success is not a gradient — it is a step. Before day 25 a retry
+        recovers almost nothing; from day 25 it recovers essentially everything, because
+        salary has landed and the balance clears. Both policies face the same step. The
+        only thing that matters is how many of a capped three retries per customer land on
+        the far side of it.
+      </p>
+      <p>
+        The model puts <strong class="num">{{LEARNED_BEFORE}}</strong> retries on days
+        21&ndash;24, immediately <em>before</em> the cliff, and only
+        <strong class="num">{{LEARNED_AFTER}}</strong> past it. The uniform control lands
+        <strong class="num">{{RANDOM_AFTER}}</strong> past it. That gap is the whole
+        result. A confident near-miss spends a capped budget on days that are reliably
+        empty; a uniform draw at least samples the far side.
+      </p>
+    </div>
+
+    <figure class="chart-frame">
+      {{CLIFF_SVG}}
+    </figure>
+    <ul class="legend">
+      <li><span class="swatch swatch-learned"></span> encore_learned — retries per day</li>
+      <li><span class="swatch swatch-random"></span> random_in_horizon — retries per day</li>
+      <li><span class="swatch swatch-rate"></span> success rate that day (both policies pooled)</li>
+    </ul>
+    <p class="readout" id="cliff-readout">Hover or focus a bar for that day's exact counts.</p>
+    {{CLIFF_PROVENANCE}}
+
+    <details class="data-details">
+      <summary>Show the same numbers as a table</summary>
+      <div class="table-scroll">
+        {{CLIFF_TABLE}}
+      </div>
+    </details>
+
+    <p class="note">
+      <strong>Disclosed limitation.</strong> The sharpness of this step is a simulator
+      artifact. <code>Portfolio.debit</code> succeeds deterministically once the balance
+      clears, so post-payday success is exactly 100% and pre-payday is near zero. Real
+      balances do not behave like this. The direction of the finding is sound; the
+      magnitude is flattered by the simulator.
+    </p>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>
+      Encore is a buildathon project. Every figure on this page is generated from
+      <code>runs/</code> by <code>encore web</code> — no number here was typed by hand.
+      The compliance wall above runs the repository's own <code>wall.py</code> in your
+      browser via Pyodide.
+    </p>
+    <p>
+      <a href="https://github.com/ranvir7123/Encore">Source</a> ·
+      <a href="https://github.com/ranvir7123/Encore/blob/main/BROKELOG.md">Broke-log</a> ·
+      <a href="https://github.com/ranvir7123/Encore/blob/main/README.md">README</a>
+    </p>
+  </div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>

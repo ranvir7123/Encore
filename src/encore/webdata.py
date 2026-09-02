@@ -176,9 +176,23 @@ def build_cliff(executions_by_policy: dict[str, list[dict]], *, regime: str,
             "total_won": sum(won),
         }
 
+    # The success rate is a property of the world, not of a policy: both
+    # policies face the same step function at day 25. Pooling them gives the
+    # chart one honest "what did day N pay out" line instead of two nearly
+    # identical ones, and makes the pre/post-cliff contrast the only thing the
+    # eye has to compare.
+    pooled_tried = [sum(s["tried"][i] for s in series.values()) for i in range(len(days))]
+    pooled_won = [sum(s["won"][i] for s in series.values()) for i in range(len(days))]
+
     return {
         "regime": regime,
         "days": days,
         "series": series,
+        "pooled": {
+            "tried": pooled_tried,
+            "won": pooled_won,
+            "win_rate": [pooled_won[i] / pooled_tried[i] if pooled_tried[i] else None
+                         for i in range(len(days))],
+        },
         "provenance": _provenance(seeds, customers),
     }

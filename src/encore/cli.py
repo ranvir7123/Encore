@@ -24,6 +24,7 @@ from encore.parser import evaluate as parser_evaluate
 from encore.parser import parse_keyword, parse_llm
 from encore.report import write_scoreboard
 from encore.webdata import build_cliff, build_results
+from encore.webhtml import render_page
 
 
 def cmd_eval(args: argparse.Namespace) -> None:
@@ -109,6 +110,21 @@ def cmd_web(args: argparse.Namespace) -> None:
     (data_dir / "cliff.json").write_text(
         json.dumps(cliff, indent=2, ensure_ascii=False), encoding="utf-8")
 
+    # index.html is RENDERED from a hand-written template rather than hand-written
+    # itself. Tier B has to be complete before any JavaScript runs (spec section 3),
+    # which means the cliff chart's ~120 numbers live in the markup -- and hand-
+    # transcribing them is exactly the failure the spec calls a transcription bug.
+    # The template holds all the prose and structure; only measured values are
+    # substituted, and an unfilled marker raises rather than shipping "{{CELLS}}".
+    template_path = Path(args.template)
+    if template_path.exists():
+        page = render_page(
+            template_path.read_text(encoding="utf-8"),
+            results, cliff, test_count=args.test_count,
+        )
+        (out_dir / "index.html").write_text(page, encoding="utf-8")
+        print(f"Wrote {out_dir / 'index.html'} from {template_path}")
+
     # Copy the live modules next to the page so the deploy is self-contained:
     # the site fetches these over HTTP and writes them into the Pyodide FS, so
     # publishing web/ without them would 404 the whole Tier A panel.
@@ -176,6 +192,10 @@ def build_parser() -> argparse.ArgumentParser:
                        help="seeds the eval was run with, for the provenance line")
     p_web.add_argument("--customers", type=int, default=500,
                        help="customers per seed the eval was run with, for the provenance line")
+    p_web.add_argument("--template", default="web/index.template.html",
+                       help="hand-written page template; measured values are substituted in")
+    p_web.add_argument("--test-count", type=int, default=116,
+                       help="suite size quoted in the hero (keep in step with `uv run pytest -q`)")
     p_web.set_defaults(func=cmd_web)
 
     return parser
