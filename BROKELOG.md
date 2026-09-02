@@ -918,8 +918,7 @@ edited after the fact.
   customer's notes since the failure; if one appears the sequence ends as
   recovered with a `self_cured` audit event, no retry executed. The two
   links now carry checkout titles that cannot be confused: "FAIL THIS ONE"
-  on the original, "PAY THIS ONE" on the recovery. Commit hash backfilled
-  below.
+  on the original, "PAY THIS ONE" on the recovery. Fix commit: `d884508`.
 - **Still open:** the recovery link that was never paid stays `created` on
   the account; the agent does not cancel it. Two takes, four real links, and
   zero real-rail recoveries recorded so far -- take 3 has to land one.
