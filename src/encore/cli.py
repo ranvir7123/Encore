@@ -76,7 +76,9 @@ def cmd_parse_eval(args: argparse.Namespace) -> None:
         return
 
     for model in ("claude-haiku-4-5", "claude-sonnet-5"):
-        result = parser_evaluate(functools.partial(parse_llm, model=model), eval_path)
+        # strict: an API failure raises here rather than silently scoring the
+        # keyword fallback under the model's name
+        result = parser_evaluate(functools.partial(parse_llm, model=model, strict=True), eval_path)
         print(f"{model:14s}: accuracy_kind={result['accuracy_kind']:.3f} "
               f"accuracy_full={result['accuracy_full']:.3f} (n={result['n']})")
 
@@ -329,7 +331,7 @@ def build_parser() -> argparse.ArgumentParser:
                        help="customers per seed the eval was run with, for the provenance line")
     p_web.add_argument("--template", default="web/index.template.html",
                        help="hand-written page template; measured values are substituted in")
-    p_web.add_argument("--test-count", type=int, default=151,
+    p_web.add_argument("--test-count", type=int, default=153,
                        help="suite size quoted in the hero (keep in step with `uv run pytest -q`)")
     p_web.set_defaults(func=cmd_web)
 
