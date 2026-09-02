@@ -1,0 +1,386 @@
+{"event": "decision", "customer_id": "cust_0005", "attempt_id": "cust_0005:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0005", "attempt_id": "cust_0005:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0005", "attempt_id": "cust_0005:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0005", "attempt_id": "cust_0005:agent_s100:retry:1", "kind": "retry", "at_hour": 70, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0030", "attempt_id": "cust_0030:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0030", "attempt_id": "cust_0030:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0030", "attempt_id": "cust_0030:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0030", "attempt_id": "cust_0030:agent_s100:retry:1", "kind": "retry", "at_hour": 170, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:retry:1", "kind": "retry", "at_hour": 170, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0145", "attempt_id": "cust_0145:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0145", "attempt_id": "cust_0145:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0145", "attempt_id": "cust_0145:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0145", "attempt_id": "cust_0145:agent_s100:retry:1", "kind": "retry", "at_hour": 74, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0167", "attempt_id": "cust_0167:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0167", "attempt_id": "cust_0167:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0167", "attempt_id": "cust_0167:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0167", "attempt_id": "cust_0167:agent_s100:retry:1", "kind": "retry", "at_hour": 147, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0380", "attempt_id": "cust_0380:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0380", "attempt_id": "cust_0380:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0380", "attempt_id": "cust_0380:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0380", "cycle_id": "agent_s100", "amount_paise": 99900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0384", "attempt_id": "cust_0384:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0384", "attempt_id": "cust_0384:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0384", "attempt_id": "cust_0384:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0384", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:retry:1", "kind": "retry", "at_hour": 126, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0461", "attempt_id": "cust_0461:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0461", "attempt_id": "cust_0461:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0461", "attempt_id": "cust_0461:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0461", "cycle_id": "agent_s100", "amount_paise": 29900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:nudge:1", "kind": "nudge", "at_hour": 6, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:nudge:1", "at_hour": 6}
+{"event": "decision", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:retry:1", "kind": "retry", "at_hour": 23, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:retry:1", "kind": "retry", "at_hour": 167, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0005", "at_hour": 19, "text": "band kar do isko", "kind": "cancel", "promise_day": null}
+{"event": "decision", "customer_id": "cust_0005", "attempt_id": "cust_0005:agent_s100:retry:1", "kind": "retry", "at_hour": 191, "allowed": false, "reason": "sequence_killed", "policy": "promise_aware_random"}
+{"event": "park", "customer_id": "cust_0005", "cycle_id": "agent_s100", "amount_paise": 99900, "reason": "sequence_killed", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:nudge:1", "kind": "nudge", "at_hour": 21, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:nudge:1", "at_hour": 21}
+{"event": "decision", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "kind": "retry", "at_hour": 23, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "kind": "retry", "at_hour": 51, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0013", "attempt_id": "cust_0013:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0013", "attempt_id": "cust_0013:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0013", "attempt_id": "cust_0013:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0013", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0092", "attempt_id": "cust_0092:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0092", "attempt_id": "cust_0092:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0092", "attempt_id": "cust_0092:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0092", "attempt_id": "cust_0092:agent_s100:retry:1", "kind": "retry", "at_hour": 219, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0272", "attempt_id": "cust_0272:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0272", "attempt_id": "cust_0272:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0272", "attempt_id": "cust_0272:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0272", "cycle_id": "agent_s100", "amount_paise": 29900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0292", "attempt_id": "cust_0292:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0292", "attempt_id": "cust_0292:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0292", "attempt_id": "cust_0292:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0292", "attempt_id": "cust_0292:agent_s100:retry:1", "kind": "retry", "at_hour": 76, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:retry:1", "kind": "retry", "at_hour": 194, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0439", "attempt_id": "cust_0439:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0439", "attempt_id": "cust_0439:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0439", "attempt_id": "cust_0439:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0439", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:retry:1", "kind": "retry", "at_hour": 124, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0457", "attempt_id": "cust_0457:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0457", "attempt_id": "cust_0457:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0457", "attempt_id": "cust_0457:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0457", "attempt_id": "cust_0457:agent_s100:retry:1", "kind": "retry", "at_hour": 52, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0469", "attempt_id": "cust_0469:agent_s100:nudge:1", "kind": "nudge", "at_hour": 30, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0469", "attempt_id": "cust_0469:agent_s100:nudge:1", "at_hour": 30}
+{"event": "decision", "customer_id": "cust_0469", "attempt_id": "cust_0469:agent_s100:retry:1", "kind": "retry", "at_hour": 47, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0469", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0030", "at_hour": 38, "text": "please retry after 3th", "kind": "promise_to_pay", "promise_day": 3}
+{"event": "decision", "customer_id": "cust_0030", "attempt_id": "cust_0030:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0272", "at_hour": 38, "text": "will pay next week", "kind": "promise_to_pay", "promise_day": null}
+{"event": "link_created", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "at_hour": 51, "amount_paise": 99900, "rail": "razorpay_test_mode", "link_id": "plink_TXE1mRxcuLVWJS", "short_url": "https://rzp.io/rzp/aAabolSJ", "status": "created"}
+{"event": "execution", "customer_id": "cust_0457", "attempt_id": "cust_0457:agent_s100:retry:1", "at_hour": 52, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0061", "attempt_id": "cust_0061:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0061", "attempt_id": "cust_0061:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0061", "attempt_id": "cust_0061:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0061", "attempt_id": "cust_0061:agent_s100:retry:1", "kind": "retry", "at_hour": 289, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0070", "attempt_id": "cust_0070:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0070", "attempt_id": "cust_0070:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0070", "attempt_id": "cust_0070:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0070", "attempt_id": "cust_0070:agent_s100:retry:1", "kind": "retry", "at_hour": 287, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0073", "attempt_id": "cust_0073:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0073", "attempt_id": "cust_0073:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0073", "attempt_id": "cust_0073:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0073", "cycle_id": "agent_s100", "amount_paise": 99900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:retry:1", "kind": "retry", "at_hour": 126, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0135", "attempt_id": "cust_0135:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0135", "attempt_id": "cust_0135:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0135", "attempt_id": "cust_0135:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0135", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:retry:1", "kind": "retry", "at_hour": 172, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:retry:1", "kind": "retry", "at_hour": 144, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:retry:1", "kind": "retry", "at_hour": 169, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0377", "attempt_id": "cust_0377:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0377", "attempt_id": "cust_0377:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0377", "attempt_id": "cust_0377:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0377", "attempt_id": "cust_0377:agent_s100:retry:1", "kind": "retry", "at_hour": 126, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:retry:1", "kind": "retry", "at_hour": 122, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0412", "attempt_id": "cust_0412:agent_s100:nudge:1", "kind": "nudge", "at_hour": 54, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0412", "attempt_id": "cust_0412:agent_s100:nudge:1", "at_hour": 54}
+{"event": "decision", "customer_id": "cust_0412", "attempt_id": "cust_0412:agent_s100:retry:1", "kind": "retry", "at_hour": 71, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0412", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0092", "at_hour": 56, "text": "cancel karo yeh subscription", "kind": "cancel", "promise_day": null}
+{"event": "decision", "customer_id": "cust_0092", "attempt_id": "cust_0092:agent_s100:retry:1", "kind": "retry", "at_hour": 118, "allowed": false, "reason": "sequence_killed", "policy": "promise_aware_random"}
+{"event": "park", "customer_id": "cust_0092", "cycle_id": "agent_s100", "amount_paise": 99900, "reason": "sequence_killed", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0061", "at_hour": 58, "text": "please retry after 10th", "kind": "promise_to_pay", "promise_day": 10}
+{"event": "decision", "customer_id": "cust_0061", "attempt_id": "cust_0061:agent_s100:retry:1", "kind": "retry", "at_hour": 239, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0412", "at_hour": 63, "text": "band kar do isko", "kind": "cancel", "promise_day": null}
+{"event": "execution", "customer_id": "cust_0030", "attempt_id": "cust_0030:agent_s100:retry:1", "at_hour": 71, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:retry:1", "at_hour": 71, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:retry:2", "kind": "retry", "at_hour": 149, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0145", "attempt_id": "cust_0145:agent_s100:retry:1", "at_hour": 74, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0145", "attempt_id": "cust_0145:agent_s100:retry:2", "kind": "retry", "at_hour": 217, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0292", "attempt_id": "cust_0292:agent_s100:retry:1", "at_hour": 76, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0292", "attempt_id": "cust_0292:agent_s100:retry:2", "kind": "retry", "at_hour": 222, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0439", "at_hour": 78, "text": "cancel karo yeh subscription", "kind": "cancel", "promise_day": null}
+{"event": "decision", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:retry:1", "kind": "retry", "at_hour": 294, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0016", "attempt_id": "cust_0016:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0016", "attempt_id": "cust_0016:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0016", "attempt_id": "cust_0016:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0016", "attempt_id": "cust_0016:agent_s100:retry:1", "kind": "retry", "at_hour": 221, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0052", "attempt_id": "cust_0052:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0052", "attempt_id": "cust_0052:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0052", "attempt_id": "cust_0052:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0052", "attempt_id": "cust_0052:agent_s100:retry:1", "kind": "retry", "at_hour": 150, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0091", "attempt_id": "cust_0091:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0091", "attempt_id": "cust_0091:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0091", "attempt_id": "cust_0091:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0091", "attempt_id": "cust_0091:agent_s100:retry:1", "kind": "retry", "at_hour": 220, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0097", "attempt_id": "cust_0097:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0097", "attempt_id": "cust_0097:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0097", "attempt_id": "cust_0097:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0097", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:retry:1", "kind": "retry", "at_hour": 243, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:retry:1", "kind": "retry", "at_hour": 270, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:retry:1", "kind": "retry", "at_hour": 174, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0151", "attempt_id": "cust_0151:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0151", "attempt_id": "cust_0151:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0151", "attempt_id": "cust_0151:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0151", "cycle_id": "agent_s100", "amount_paise": 29900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:retry:1", "kind": "retry", "at_hour": 217, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:retry:1", "kind": "retry", "at_hour": 144, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:retry:1", "kind": "retry", "at_hour": 312, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:retry:1", "kind": "retry", "at_hour": 310, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:nudge:1", "kind": "nudge", "at_hour": 78, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:nudge:1", "at_hour": 78}
+{"event": "decision", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:retry:1", "kind": "retry", "at_hour": 95, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:retry:1", "kind": "retry", "at_hour": 124, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0151", "at_hour": 85, "text": "band kar do isko", "kind": "cancel", "promise_day": null}
+{"event": "reply", "customer_id": "cust_0207", "at_hour": 85, "text": "will pay next week", "kind": "promise_to_pay", "promise_day": null}
+{"event": "reply", "customer_id": "cust_0016", "at_hour": 88, "text": "cancel karo yeh subscription", "kind": "cancel", "promise_day": null}
+{"event": "decision", "customer_id": "cust_0016", "attempt_id": "cust_0016:agent_s100:retry:1", "kind": "retry", "at_hour": 147, "allowed": false, "reason": "sequence_killed", "policy": "promise_aware_random"}
+{"event": "park", "customer_id": "cust_0016", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "sequence_killed", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0367", "at_hour": 91, "text": "will pay next week", "kind": "promise_to_pay", "promise_day": null}
+{"event": "decision", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:nudge:1", "kind": "nudge", "at_hour": 102, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:nudge:1", "at_hour": 102}
+{"event": "decision", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:retry:1", "kind": "retry", "at_hour": 119, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:retry:1", "kind": "retry", "at_hour": 118, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:nudge:1", "kind": "nudge", "at_hour": 102, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:nudge:1", "at_hour": 102}
+{"event": "decision", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:retry:1", "kind": "retry", "at_hour": 119, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:retry:1", "kind": "retry", "at_hour": 315, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0189", "attempt_id": "cust_0189:agent_s100:nudge:1", "kind": "nudge", "at_hour": 102, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0189", "attempt_id": "cust_0189:agent_s100:nudge:1", "at_hour": 102}
+{"event": "decision", "customer_id": "cust_0189", "attempt_id": "cust_0189:agent_s100:retry:1", "kind": "retry", "at_hour": 119, "allowed": false, "reason": "hard_decline_terminal", "policy": "promise_aware_random", "probe": true}
+{"event": "park", "customer_id": "cust_0189", "cycle_id": "agent_s100", "amount_paise": 29900, "reason": "hard_decline_terminal", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:nudge:1", "kind": "nudge", "at_hour": 102, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:nudge:1", "at_hour": 102}
+{"event": "decision", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:retry:1", "kind": "retry", "at_hour": 119, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:retry:1", "kind": "retry", "at_hour": 243, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "decision", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:nudge:1", "kind": "nudge", "at_hour": 102, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "nudge", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:nudge:1", "at_hour": 102}
+{"event": "decision", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:retry:1", "kind": "retry", "at_hour": 119, "allowed": true, "reason": "ok", "policy": "promise_aware_random", "probe": true}
+{"event": "decision", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:retry:1", "kind": "retry", "at_hour": 166, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "reply", "customer_id": "cust_0091", "at_hour": 110, "text": "cancel karo yeh subscription", "kind": "cancel", "promise_day": null}
+{"event": "decision", "customer_id": "cust_0091", "attempt_id": "cust_0091:agent_s100:retry:1", "kind": "retry", "at_hour": 310, "allowed": false, "reason": "sequence_killed", "policy": "promise_aware_random"}
+{"event": "park", "customer_id": "cust_0091", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "sequence_killed", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:retry:1", "at_hour": 118, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:retry:2", "kind": "retry", "at_hour": 192, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:retry:1", "at_hour": 122, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:retry:2", "kind": "retry", "at_hour": 215, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:retry:1", "at_hour": 124, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:retry:2", "kind": "retry", "at_hour": 214, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:retry:1", "at_hour": 124, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:retry:2", "kind": "retry", "at_hour": 166, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:retry:1", "at_hour": 126, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:retry:2", "kind": "retry", "at_hour": 385, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:retry:1", "at_hour": 126, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:retry:2", "kind": "retry", "at_hour": 240, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0377", "attempt_id": "cust_0377:agent_s100:retry:1", "at_hour": 126, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0377", "attempt_id": "cust_0377:agent_s100:retry:2", "kind": "retry", "at_hour": 312, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:retry:1", "at_hour": 144, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:retry:2", "kind": "retry", "at_hour": 384, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:retry:1", "at_hour": 144, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:retry:2", "kind": "retry", "at_hour": 292, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0167", "attempt_id": "cust_0167:agent_s100:retry:1", "at_hour": 147, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:retry:2", "at_hour": 149, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:retry:3", "kind": "retry", "at_hour": 219, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0052", "attempt_id": "cust_0052:agent_s100:retry:1", "at_hour": 150, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0052", "attempt_id": "cust_0052:agent_s100:retry:2", "kind": "retry", "at_hour": 388, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:retry:2", "at_hour": 166, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:retry:3", "kind": "retry", "at_hour": 365, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:retry:1", "at_hour": 166, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:retry:2", "kind": "retry", "at_hour": 196, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:retry:1", "at_hour": 167, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:retry:2", "kind": "retry", "at_hour": 388, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:retry:1", "at_hour": 169, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:retry:2", "kind": "retry", "at_hour": 269, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:retry:1", "at_hour": 170, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:retry:2", "kind": "retry", "at_hour": 408, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:retry:1", "at_hour": 172, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:retry:2", "kind": "retry", "at_hour": 365, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:retry:1", "at_hour": 174, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:retry:2", "kind": "retry", "at_hour": 310, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:retry:2", "at_hour": 192, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:retry:3", "kind": "retry", "at_hour": 454, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:retry:1", "at_hour": 194, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:retry:2", "kind": "retry", "at_hour": 413, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:retry:2", "at_hour": 196, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:retry:3", "kind": "retry", "at_hour": 338, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:retry:2", "at_hour": 214, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:retry:3", "kind": "retry", "at_hour": 410, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:retry:2", "at_hour": 215, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:retry:3", "kind": "retry", "at_hour": 461, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0145", "attempt_id": "cust_0145:agent_s100:retry:2", "at_hour": 217, "outcome": "success", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:retry:1", "at_hour": 217, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:retry:2", "kind": "retry", "at_hour": 359, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0309", "attempt_id": "cust_0309:agent_s100:retry:3", "at_hour": 219, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0292", "attempt_id": "cust_0292:agent_s100:retry:2", "at_hour": 222, "outcome": "success", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0061", "attempt_id": "cust_0061:agent_s100:retry:1", "at_hour": 239, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0061", "attempt_id": "cust_0061:agent_s100:retry:2", "kind": "retry", "at_hour": 437, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:retry:2", "at_hour": 240, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:retry:3", "kind": "retry", "at_hour": 385, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:retry:1", "at_hour": 243, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:retry:2", "kind": "retry", "at_hour": 433, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:retry:1", "at_hour": 243, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:retry:2", "kind": "retry", "at_hour": 408, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:retry:2", "at_hour": 269, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:retry:3", "kind": "retry", "at_hour": 315, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:retry:1", "at_hour": 270, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:retry:2", "kind": "retry", "at_hour": 336, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0070", "attempt_id": "cust_0070:agent_s100:retry:1", "at_hour": 287, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:retry:2", "at_hour": 292, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:retry:3", "kind": "retry", "at_hour": 414, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:retry:1", "at_hour": 294, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:retry:2", "kind": "retry", "at_hour": 551, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:retry:2", "at_hour": 310, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:retry:3", "kind": "retry", "at_hour": 479, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:retry:1", "at_hour": 310, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:retry:2", "kind": "retry", "at_hour": 411, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0377", "attempt_id": "cust_0377:agent_s100:retry:2", "at_hour": 312, "outcome": "success", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:retry:1", "at_hour": 312, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:retry:2", "kind": "retry", "at_hour": 411, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0257", "attempt_id": "cust_0257:agent_s100:retry:3", "at_hour": 315, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0257", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:retry:1", "at_hour": 315, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 1, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:retry:2", "kind": "retry", "at_hour": 484, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:retry:2", "at_hour": 336, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:retry:3", "kind": "retry", "at_hour": 530, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0351", "attempt_id": "cust_0351:agent_s100:retry:3", "at_hour": 338, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0351", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:retry:2", "at_hour": 359, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:retry:3", "kind": "retry", "at_hour": 551, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:retry:2", "at_hour": 365, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:retry:3", "kind": "retry", "at_hour": 598, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0464", "attempt_id": "cust_0464:agent_s100:retry:3", "at_hour": 365, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0464", "cycle_id": "agent_s100", "amount_paise": 99900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:retry:2", "at_hour": 384, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:retry:3", "kind": "retry", "at_hour": 485, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:retry:2", "at_hour": 385, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:retry:3", "kind": "retry", "at_hour": 457, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0074", "attempt_id": "cust_0074:agent_s100:retry:3", "at_hour": 385, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0074", "cycle_id": "agent_s100", "amount_paise": 99900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:retry:2", "at_hour": 388, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:retry:3", "kind": "retry", "at_hour": 434, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0052", "attempt_id": "cust_0052:agent_s100:retry:2", "at_hour": 388, "outcome": "success", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:retry:2", "at_hour": 408, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:retry:3", "kind": "retry", "at_hour": 653, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:retry:2", "at_hour": 408, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:retry:3", "kind": "retry", "at_hour": 626, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0447", "attempt_id": "cust_0447:agent_s100:retry:3", "at_hour": 410, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0447", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:retry:2", "at_hour": 411, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:retry:3", "kind": "retry", "at_hour": 551, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:retry:2", "at_hour": 411, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:retry:3", "kind": "retry", "at_hour": 486, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:retry:2", "at_hour": 413, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:retry:3", "kind": "retry", "at_hour": 458, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0288", "attempt_id": "cust_0288:agent_s100:retry:3", "at_hour": 414, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0288", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:retry:2", "at_hour": 433, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:retry:3", "kind": "retry", "at_hour": 552, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0480", "attempt_id": "cust_0480:agent_s100:retry:3", "at_hour": 434, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0480", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0061", "attempt_id": "cust_0061:agent_s100:retry:2", "at_hour": 437, "outcome": "success", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0104", "attempt_id": "cust_0104:agent_s100:retry:3", "at_hour": 454, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0104", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0403", "attempt_id": "cust_0403:agent_s100:retry:3", "at_hour": 457, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0403", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0417", "attempt_id": "cust_0417:agent_s100:retry:3", "at_hour": 458, "outcome": "failure", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0417", "cycle_id": "agent_s100", "amount_paise": 19900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0408", "attempt_id": "cust_0408:agent_s100:retry:3", "at_hour": 461, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0408", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0149", "attempt_id": "cust_0149:agent_s100:retry:3", "at_hour": 479, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0149", "cycle_id": "agent_s100", "amount_paise": 29900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:retry:2", "at_hour": 484, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:retry:3", "kind": "retry", "at_hour": 553, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0182", "attempt_id": "cust_0182:agent_s100:retry:3", "at_hour": 485, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0182", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0421", "attempt_id": "cust_0421:agent_s100:retry:3", "at_hour": 486, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0421", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0141", "attempt_id": "cust_0141:agent_s100:retry:3", "at_hour": 530, "outcome": "failure", "amount_paise": 49900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0141", "cycle_id": "agent_s100", "amount_paise": 49900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:retry:2", "at_hour": 551, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 2, "rail": "simulated"}
+{"event": "decision", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:retry:3", "kind": "retry", "at_hour": 695, "allowed": true, "reason": "ok", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0207", "attempt_id": "cust_0207:agent_s100:retry:3", "at_hour": 551, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0207", "cycle_id": "agent_s100", "amount_paise": 99900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0367", "attempt_id": "cust_0367:agent_s100:retry:3", "at_hour": 551, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0367", "cycle_id": "agent_s100", "amount_paise": 29900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0106", "attempt_id": "cust_0106:agent_s100:retry:3", "at_hour": 552, "outcome": "failure", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0106", "cycle_id": "agent_s100", "amount_paise": 29900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0162", "attempt_id": "cust_0162:agent_s100:retry:3", "at_hour": 553, "outcome": "failure", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "park", "customer_id": "cust_0162", "cycle_id": "agent_s100", "amount_paise": 99900, "reason": "policy_stop", "policy": "promise_aware_random"}
+{"event": "execution", "customer_id": "cust_0140", "attempt_id": "cust_0140:agent_s100:retry:3", "at_hour": 598, "outcome": "success", "amount_paise": 19900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0228", "attempt_id": "cust_0228:agent_s100:retry:3", "at_hour": 626, "outcome": "success", "amount_paise": 29900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0113", "attempt_id": "cust_0113:agent_s100:retry:3", "at_hour": 653, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0001", "attempt_id": "cust_0001:agent_s100:retry:3", "at_hour": 695, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "insufficient_funds", "attempt_no": 3, "rail": "simulated"}
+{"event": "execution", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "at_hour": 51, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "generic_decline", "attempt_no": 1, "rail": "razorpay_test_mode", "link_id": "plink_TXE1mRxcuLVWJS", "short_url": "https://rzp.io/rzp/aAabolSJ", "status": "paid"}

@@ -462,3 +462,56 @@ The operator paid `plink_TXCMST6ys8Yfga`; Razorpay captured
 simulator. BROKELOG entry 14: the timeout was sized for software, and the
 live `cycle_id` would have made a second take's reference_ids collide.
 Kept under `runs/take1/`.
+
+## Live rehearsal, take 2 (2026-09-02, ~20:53 IST)
+
+`encore agent --live 1 --batch 50 --speed 6 --timeout 600 --interval 5
+--window-s 1200`, after the timeout and cycle-id fixes (BROKELOG entry 14).
+Detection: `Payments API: 1 mapped failure(s), 0 unmapped, in the last 20
+min.` Recovery link `plink_TXDTTeY7Q8yapK` printed with `pay by 21:03:07`.
+The operator paid the ORIGINAL link instead (`pay_TXDV9saQEzX5yb`, captured
+20:54:44); the recovery link stayed `created` and timed out at 21:03:07.
+Batch: INR 9,486.00 of INR 27,349.00 (34.7%). BROKELOG entry 15; kept under
+`runs/take2/`.
+
+## Live rehearsal, take 3 (2026-09-02, ~21:25 IST) -- the one that landed
+
+After the self-cure watch and the "FAIL THIS ONE" / "PAY THIS ONE" checkout
+titles (commit d884508). Original: `encore seed-live --n 1 --seed 102` ->
+cust_0055, INR 999.00, `https://rzp.io/rzp/FnKdtut5`, failed on checkout with
+the insufficient-funds card (reported as `payment_failed`, as in entry 13).
+
+```
+rm -f runs/agent_ledger.txt runs/agent_audit.jsonl runs/board.html
+PYTHONUNBUFFERED=1 uv run encore agent --live 1 --batch 50 --speed 6 --timeout 600 --interval 5 --window-s 1200
+```
+
+Verbatim transcript:
+
+```
+Payments API: 1 mapped failure(s), 0 unmapped, in the last 20 min.
+=== Encore recovery agent ===
+seed 100 | regime r1_shifted | 50 simulated + 1 live on Razorpay test mode | policy promise_aware_random | 6.0 sim-hours per second | live
+board: runs\board.html
+
+  LINK for cust_0055 INR 999.00: https://rzp.io/rzp/aAabolSJ  (plink_TXE1mRxcuLVWJS)  pay by 21:35:35
+
+at risk     INR 28,049.00
+recovered   INR 10,485.00  (37.4%)
+attempts 87  denied 17  nudges 51  duplicates_blocked 0  paid_on_their_own 0
+parked: hard_decline_terminal=13, policy_stop=19, sequence_killed=4
+audit: runs\agent_audit.jsonl  ledger: runs\agent_ledger.txt  board: runs\board.html
+```
+
+The operator paid the recovery link on the Netbanking mock bank within the
+window. The two real-rail audit records, verbatim:
+
+```json
+{"event": "link_created", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "at_hour": 51, "amount_paise": 99900, "rail": "razorpay_test_mode", "link_id": "plink_TXE1mRxcuLVWJS", "short_url": "https://rzp.io/rzp/aAabolSJ", "status": "created"}
+{"event": "execution", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "at_hour": 51, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "generic_decline", "attempt_no": 1, "rail": "razorpay_test_mode", "link_id": "plink_TXE1mRxcuLVWJS", "short_url": "https://rzp.io/rzp/aAabolSJ", "status": "paid"}
+```
+
+Audit counts: 199 decisions, 51 nudges, 12 replies (7 cancel, 5 promise),
+87 executions (15 successes: 14 simulated, 1 real), 36 parks, 1 link. The
+final board, transcript and full audit log are committed under
+`docs/evidence/`. Kept under `runs/take3/`.
