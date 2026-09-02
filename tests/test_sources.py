@@ -48,21 +48,36 @@ def test_sim_hour_keeps_ist_hour_of_day_and_counts_days_from_anchor():
 
 
 def test_razorpay_source_yields_failed_debits_with_customer_from_notes():
-    src = RazorpayFailureSource(FakeClient([_payment()]), ANCHOR, ANCHOR + 86400, "live", ANCHOR)
+    src = RazorpayFailureSource(FakeClient([_payment()]), ANCHOR, ANCHOR + 86400, ANCHOR)
     [f] = src.failures()
     assert f.customer_id == "cust_0042" and f.amount_paise == 19900
-    assert f.decline is DeclineCode.INSUFFICIENT_FUNDS and f.at_hour == 14 and f.cycle_id == "live"
+    assert f.decline is DeclineCode.INSUFFICIENT_FUNDS and f.at_hour == 14
+    assert f.cycle_id == "1"  # the failed payment's own id, "pay_" stripped
     assert src.unmapped == []
 
 
 def test_razorpay_source_skips_non_failed_and_parks_unmapped():
     items = [_payment(status="captured"), _payment(id="pay_2", error_reason="card_declined"),
              _payment(id="pay_3", notes={})]
-    src = RazorpayFailureSource(FakeClient(items), ANCHOR, ANCHOR + 86400, "live", ANCHOR)
+    src = RazorpayFailureSource(FakeClient(items), ANCHOR, ANCHOR + 86400, ANCHOR)
     fails = src.failures()
-    assert [f.customer_id for f in fails] == ["rzp:pay_3"]
+    assert [f.customer_id for f in fails] == ["3"]  # unattributed: named by its payment
     assert src.unmapped == [{"payment_id": "pay_2", "customer_id": "cust_0042",
                              "error_reason": "card_declined", "amount_paise": 19900}]
+
+
+def test_attempt_ids_from_real_failures_fit_razorpay_reference_id_limit():
+    """Razorpay reference_id is capped at 40 characters. Real payment ids are
+    18 characters ("pay_" + 14); the worst case is an unattributed failure,
+    whose customer id IS the payment id."""
+    from encore.domain import ActionKind, ProposedAction, attempt_id
+
+    items = [_payment(id="pay_TXCExIcrL6fcrD", notes={}),
+             _payment(id="pay_TXCGLl4N2QOjcv", notes={"customer_id": "cust_0005"})]
+    for f in RazorpayFailureSource(FakeClient(items), ANCHOR, ANCHOR + 86400, ANCHOR).failures():
+        aid = attempt_id(ProposedAction(ActionKind.RETRY, f.customer_id, f.cycle_id,
+                                        f.amount_paise, f.at_hour + 72, 3))
+        assert len(aid) <= 40, aid
 
 
 def test_simulated_source_equals_run_cycle():

@@ -211,7 +211,7 @@ def cmd_agent(args: argparse.Namespace) -> None:
         load_dotenv()
         client = RazorpayClient()
         now_ts = int(time.time())
-        source = RazorpayFailureSource(client, now_ts - args.window_s, now_ts, "live",
+        source = RazorpayFailureSource(client, now_ts - args.window_s, now_ts,
                                        _ist_midnight(now_ts))
         live_failures = source.failures()[:live_n]
         unmapped = source.unmapped
@@ -241,8 +241,11 @@ def cmd_agent(args: argparse.Namespace) -> None:
         write_board(board_path, build_board(agent.records, at_risk), provenance)
         links = [r for r in agent.records if r["event"] == "link_created"]
         for r in links[printed["links"]:]:
+            # The timeout is sized for a HUMAN paying a link, not for software
+            # (BROKELOG entry 14): say when it expires, in wall-clock time.
+            pay_by = time.strftime("%H:%M:%S", time.localtime(time.time() + args.timeout))
             print(f"  LINK for {r['customer_id']} INR {r['amount_paise'] / 100:.2f}: "
-                  f"{r.get('short_url')}  ({r.get('link_id')})")
+                  f"{r.get('short_url')}  ({r.get('link_id')})  pay by {pay_by}")
         printed["links"] = len(links)
 
     clock = SimClock(1.0 / args.speed) if args.speed > 0 else InstantClock()
@@ -313,7 +316,7 @@ def build_parser() -> argparse.ArgumentParser:
                        help="customers per seed the eval was run with, for the provenance line")
     p_web.add_argument("--template", default="web/index.template.html",
                        help="hand-written page template; measured values are substituted in")
-    p_web.add_argument("--test-count", type=int, default=147,
+    p_web.add_argument("--test-count", type=int, default=148,
                        help="suite size quoted in the hero (keep in step with `uv run pytest -q`)")
     p_web.set_defaults(func=cmd_web)
 
@@ -338,8 +341,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="simulated hours per real second; 0 = instant (default: 2)")
     p_agent.add_argument("--interval", type=float, default=5.0,
                          help="seconds between polls of a live link (default: 5)")
-    p_agent.add_argument("--timeout", type=float, default=180.0,
-                         help="seconds to wait for a live link to be paid (default: 180)")
+    p_agent.add_argument("--timeout", type=float, default=600.0,
+                         help="seconds to wait for a HUMAN to pay a live link (default: 600)")
     p_agent.add_argument("--window-s", type=int, default=3 * 3600, dest="window_s",
                          help="how far back to look for failed payments (default: 3h)")
     p_agent.add_argument("--out-dir", default="runs")

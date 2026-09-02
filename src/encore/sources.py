@@ -48,17 +48,29 @@ class SimulatedFailureSource:
         return self._p.run_cycle(self._days, self._cycle_id)
 
 
+def short_payment_id(payment_id: str) -> str:
+    return payment_id.removeprefix("pay_")
+
+
 class RazorpayFailureSource:
     """Failed payments from GET /v1/payments in [from_ts, to_ts]. customer_id
     comes from the payment's notes (set on the originating Payment Link and
-    carried onto the payment entity -- verified in docs/spike-notes.md, A0),
-    else "rzp:<payment_id>" so nothing is silently dropped. Payments whose
+    carried onto the payment entity -- verified in docs/spike-notes.md, A0);
+    a failure with no customer on it is named by its own payment id so
+    nothing is silently dropped. Payments whose
     error_reason is not in ERROR_REASON_TO_DECLINE are collected in
-    `unmapped` for the agent to park and report, not retried."""
+    `unmapped` for the agent to park and report, not retried.
 
-    def __init__(self, client, from_ts: int, to_ts: int, cycle_id: str, anchor_ts: int) -> None:
-        self._client, self._from, self._to = client, from_ts, to_ts
-        self._cycle_id, self._anchor = cycle_id, anchor_ts
+    The FailedDebit's cycle_id is the failed payment's own id (minus the
+    "pay_" prefix), so every attempt_id -- and therefore every Payment Link
+    reference_id -- is unique per ORIGINAL failure: a second take of the demo
+    cannot collide with the first at Razorpay, and a crash-restart on the
+    same failure is still caught by the ledger. BROKELOG entry 14. Stripping
+    the prefix keeps the longest attempt_id at Razorpay's 40-character
+    reference_id limit (pinned by a test)."""
+
+    def __init__(self, client, from_ts: int, to_ts: int, anchor_ts: int) -> None:
+        self._client, self._from, self._to, self._anchor = client, from_ts, to_ts, anchor_ts
         self.unmapped: list[dict] = []
 
     def failures(self) -> list[FailedDebit]:
@@ -67,13 +79,14 @@ class RazorpayFailureSource:
         for p in self._client.list_payments(self._from, self._to):
             if p.get("status") != "failed":
                 continue
-            cid = (p.get("notes") or {}).get("customer_id") or f"rzp:{p['id']}"
+            short = short_payment_id(p["id"])
+            cid = (p.get("notes") or {}).get("customer_id") or short
             code = map_error_reason(p.get("error_reason"))
             if code is None:
                 self.unmapped.append({"payment_id": p["id"], "customer_id": cid,
                                       "error_reason": p.get("error_reason"),
                                       "amount_paise": int(p["amount"])})
                 continue
-            out.append(FailedDebit(cid, self._cycle_id, int(p["amount"]), code,
+            out.append(FailedDebit(cid, short, int(p["amount"]), code,
                                    sim_hour(int(p["created_at"]), self._anchor)))
         return out
