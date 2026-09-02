@@ -851,3 +851,36 @@ edited after the fact.
 - **Still open:** what a real live-mode insufficient-funds decline reports as
   `error_reason` is unverified, so the agent cannot yet tell "no money" from
   "bank said no" on the real rail; README §7 says so.
+
+### 2026-09-02 — Live rehearsal: the link the operator paid was recorded as a timeout, and a retake would have collided at Razorpay
+- **What happened:** first live run of `encore agent --live 3 --batch 50
+  --speed 6 --timeout 240`. Detection worked (3 real failures found through
+  the Payments API, 0 unmapped), the agent created three real recovery links
+  (`plink_TXCMK5peBCA4t5`, `plink_TXCMST6ys8Yfga`, `plink_TXCMXbSeoFGj3F`),
+  and the batch recovered INR 9,984.00 of INR 28,047.00 on the simulated
+  rail. The operator paid `plink_TXCMST6ys8Yfga` (cust_0005, INR 999.00) and
+  Razorpay captured it (`pay_TXCQdLbRfAi7lW`) -- but the audit log says
+  `outcome: "failure", status: "no_terminal_status_within_timeout"` for all
+  three links, and the board showed INR 0.00 recovered on the real rail.
+- **Evidence:** Razorpay's own timestamps, fetched afterwards: link created
+  19:47:48, payment captured 19:52:00 -- 252 s after creation, against a
+  240 s timeout. The agent's polling was correct; the human loop (the link
+  URL relayed to the operator, the operator opening it, the mock bank page)
+  took four minutes. While planning the retake, a second problem: the live
+  failures were given `cycle_id = "live"`, so a retake's attempt_ids -- which
+  are the Payment Links' `reference_id`s -- would be identical to the first
+  take's (`cust_0005:live:retry:1`). With the ledger kept they are blocked
+  locally and no link is created; with a fresh ledger Razorpay rejects the
+  duplicate reference_id. Either way the second take cannot run.
+- **Root cause:** (1) `--timeout` was sized like a network timeout; it is the
+  time a person has to pay. (2) The cycle id for a real failure carried no
+  identity of the failure itself.
+- **Fix:** `--timeout` defaults to 600 s and every printed link says "pay by
+  HH:MM:SS". `RazorpayFailureSource` sets `cycle_id` to the failed payment's
+  own id with the `pay_` prefix stripped, so attempt_ids are unique per
+  original failure and stay within Razorpay's 40-character reference_id
+  limit (pinned by a test). Commit hash backfilled below.
+- **Still open:** the video take has to keep the operator's hands on the
+  checkout within the window; the demo script says so. The three links from
+  this take remain on the account (one paid, two `created`), counted against
+  the 30-link test-mode cap.
