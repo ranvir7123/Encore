@@ -1,8 +1,18 @@
 # Encore
 
-Compliance-first retry policy for failed UPI AutoPay / card e-mandate debits —
-learns **when** to retry inside a hard wall that decides **whether** a retry
-is even legal, never the other way around.
+Compliance-first retry sequencer for failed UPI AutoPay / card e-mandate
+debits. A pure-function wall decides **whether** a retry is legal; a policy
+chooses **when**, inside it — never the other way around. Recovers **2.85x
+the industry-standard T+1/T+2/T+3 schedule** across three regimes with
+**zero compliance violations in all 18 evaluated cells**.
+
+> **Read §7 before you read the metrics table.** We built a horizon-matched
+> control — the same retry budget, the same candidate hours, chosen at
+> random instead of by the model — and on the held-out regime **it beats our
+> trained model by 47%**. We then tested our own explanation for why, and
+> that was wrong too. Both results are in `BROKELOG.md` (entries 9 and 10),
+> written before either fix. The wall is the part of this system that works;
+> the ML is not, and we would rather you heard that from us.
 
 ## 1. The problem
 
@@ -29,34 +39,72 @@ never the reverse.
 ## 2. The metrics table
 
 Pasted verbatim from `runs/eval.json`, the real output of
-`uv run encore eval` — seeds `[100, 101, 102]`, `n_customers=500` per seed,
-one model trained once on regime `r0_base`, seeds `1`–`5` only (never on an
-eval seed). Money is in ₹, Indian digit grouping, exactly as `encore report`
-renders it on `runs/scoreboard.html`.
+`uv run encore eval` — seeds `[100, 101, 102]`, `n_customers=500` per seed.
+Both learned models are trained once on regime `r0_base`, seeds `1`–`5`
+only (never on an eval seed). Money is in ₹, Indian digit grouping, exactly
+as `encore report` renders it on `runs/scoreboard.html`.
+
+**Read the `random_in_horizon` row before the `encore_learned` row.** It is
+the control that decides what this table actually shows, and on two of three
+regimes it wins. See §7.
 
 | Regime | Policy | Recovered / 1000 failures | Recovery / attempt | Max contacts / customer | Parked | Violations |
 |---|---|---:|---:|---:|---:|---:|
-| r0_base | immediate_x3 | ₹0.00 | ₹0.00 | 0 | ₹41,417.00 | 0 |
-| r0_base | fixed_t123 | ₹68,040.91 | ₹70.61 | 3 | ₹26,448.00 | 0 |
-| r0_base | encore_learned | ₹1,88,259.09 | ₹426.98 | 3 | ₹0.00 | 0 |
-| r1_shifted | immediate_x3 | ₹0.00 | ₹0.00 | 0 | ₹2,07,341.00 | 0 |
-| r1_shifted | fixed_t123 | ₹52,774.63 | ₹31.01 | 3 | ₹1,68,235.00 | 0 |
-| r1_shifted | encore_learned | ₹1,50,291.50 | ₹104.67 | 3 | ₹95,975.00 | 0 |
-| r2_no_signal | immediate_x3 | ₹0.00 | ₹0.00 | 0 | ₹2,63,444.00 | 0 |
-| r2_no_signal | fixed_t123 | ₹34,005.26 | ₹16.09 | 3 | ₹2,37,600.00 | 0 |
-| r2_no_signal | encore_learned | ₹1,07,677.63 | ₹56.71 | 3 | ₹1,81,609.00 | 0 |
+| r0_base | `immediate_x3` | ₹0.00 | ₹0.00 | 0 | ₹41,417.00 | 0 |
+| r0_base | `fixed_t123` | ₹68,040.91 | ₹70.61 | 3 | ₹26,448.00 | 0 |
+| r0_base | `fixed_spread10` | ₹1,65,581.82 | ₹241.25 | 3 | ₹4,989.00 | 0 |
+| r0_base | `random_in_horizon` | ₹1,82,359.09 | ₹331.56 | 3 | ₹1,298.00 | 0 |
+| r0_base | `encore_learned` | ₹1,88,259.09 | ₹426.98 | 3 | ₹0.00 | 0 |
+| r0_base | `encore_learned_nopayday` | ₹1,88,259.09 | ₹435.97 | 3 | ₹0.00 | 0 |
+| r1_shifted | `immediate_x3` | ₹0.00 | ₹0.00 | 0 | ₹2,07,341.00 | 0 |
+| r1_shifted | `fixed_t123` | ₹52,774.63 | ₹31.01 | 3 | ₹1,68,235.00 | 0 |
+| r1_shifted | `fixed_spread10` | ₹1,43,001.35 | ₹96.33 | 3 | ₹1,01,377.00 | 0 |
+| r1_shifted | `random_in_horizon` | ₹2,20,425.10 | ₹166.16 | 3 | ₹44,006.00 | 0 |
+| r1_shifted | `encore_learned` | ₹1,50,291.50 | ₹104.67 | 3 | ₹95,975.00 | 0 |
+| r1_shifted | `encore_learned_nopayday` | ₹1,54,867.75 | ₹111.20 | 3 | ₹92,584.00 | 0 |
+| r2_no_signal | `immediate_x3` | ₹0.00 | ₹0.00 | 0 | ₹2,63,444.00 | 0 |
+| r2_no_signal | `fixed_t123` | ₹34,005.26 | ₹16.09 | 3 | ₹2,37,600.00 | 0 |
+| r2_no_signal | `fixed_spread10` | ₹81,938.16 | ₹41.05 | 3 | ₹2,01,171.00 | 0 |
+| r2_no_signal | `random_in_horizon` | ₹1,18,831.58 | ₹62.24 | 3 | ₹1,73,132.00 | 0 |
+| r2_no_signal | `encore_learned` | ₹1,07,677.63 | ₹56.71 | 3 | ₹1,81,609.00 | 0 |
+| r2_no_signal | `encore_learned_nopayday` | ₹1,07,411.84 | ₹57.09 | 3 | ₹1,81,811.00 | 0 |
 
+**The six policies, and what each one is for:**
+
+- `immediate_x3` — retries one hour after failure, three times. A floor.
+- `fixed_t123` — T+1/T+2/T+3 at 23:00. **Razorpay's documented subscription
+  auto-retry shape**, so this is the industry-standard comparison.
+- `fixed_spread10` — T+3/T+6/T+9 at 23:00. Same 10-day reach as the learned
+  policy, spent with no model at all. *Horizon-matched heuristic.*
+- `random_in_horizon` — identical candidate set and identical cooldown-aware
+  start to `LearnedPolicy`, hour drawn uniformly at random.
+  ***Horizon-matched scientific control.***
+- `encore_learned` — the trained model.
+- `encore_learned_nopayday` — the same model with the hardcoded
+  `day_of_month in (1, 2, 7, 8)` feature removed. See §7.
+
+**What the table says, stated plainly:**
+
+- **The headline claim that survives is `encore_learned` beating
+  `fixed_t123` by 2.85x on the held-out `r1_shifted` regime.** That is a
+  real product result: `fixed_t123` is what the industry actually does.
+- **The claim that does NOT survive is that the model learned useful
+  timing.** On `r1_shifted` the uniform-random control recovers
+  ₹2,20,425.10 against the model's ₹1,50,291.50 — **random wins by 47%,
+  using fewer attempts** (~1,327 vs ~1,436 per 1000 failures). Reproduced
+  across four independent rng streams. The model only wins on `r0_base`,
+  the regime it trained on, and only by 1–3%. Full analysis in §7 and
+  `BROKELOG.md` entries 9 and 10.
 - **`immediate_x3` recovers ₹0.00 in every regime by design, not by bug.**
-  It retries an hour after failure, every time — which always lands just
-  outside the wall's 22:00–07:00 execution window, so it burns its entire
-  3-attempt budget on `outside_execution_window` and `cooldown_active`
-  denials and never once reaches the rail. That's the whole point of
-  including it: the wall enforcing the window *is* the lesson, and the
-  denial breakdown in `runs/scoreboard.html` shows exactly which rule
-  caught it, per regime.
-- `compliance_violations` is `0` in every cell — see the violations caveat
-  in Limitations below for what that number can and cannot prove.
-- Regimes: `r0_base` is what the model trained on; `r1_shifted` moves the
+  It retries an hour after failure, which always lands just outside the
+  wall's 22:00–07:00 execution window, so it burns its entire 3-attempt
+  budget on `outside_execution_window` and `cooldown_active` denials and
+  never once reaches the rail. The wall enforcing the window *is* the
+  lesson, and `runs/scoreboard.html`'s denial breakdown shows exactly which
+  rule caught it.
+- `compliance_violations` is `0` in all 18 cells — see the violations caveat
+  in §7 for what that number can and cannot prove.
+- Regimes: `r0_base` is what the models train on; `r1_shifted` moves the
   salary-day distribution later in the month and raises decline rates (a
   held-out distribution shift); `r2_no_signal` keeps `r0_base`'s rates but
   destroys the salary-day timing signal entirely (`uniform_credits=True`).
@@ -202,22 +250,70 @@ logic with no network call and no real link.
   actually goes through — it is not unverified, just not *independently
   re-verifiable* after the fact from the audit log as it currently exists.
   See the docstring on `count_violations` in `src/encore/evaluate.py`.
-- **`encore_learned`'s ~3x win on `r2_no_signal` is likely a horizon
-  artifact, not learned timing.** `r2_no_signal` deliberately destroys the
-  salary-day signal (`uniform_credits=True`) — there should be nothing
-  timing-related left to learn. `LearnedPolicy.propose` searches up to a
-  10-day candidate horizon per attempt (`_legal_candidates`,
-  `src/encore/model.py`); `FixedSchedule` only ever tries exactly T+1, T+2,
-  T+3. A much wider search window can "catch" more solvent moments purely
-  by trying more days, independent of whether the model learned anything
-  real. Read that ~3x number as "wider search space," not "successfully
-  learned a signal that doesn't exist." The `r1_shifted` win (~2.8x) is more
-  plausibly real, since `r1_shifted` still has a (shifted) salary-day signal
-  for the model to actually use — but it shares the same horizon-mismatch
-  confound with the fixed baseline, so read it as directionally honest, not
-  as a horizon-controlled result. A horizon-matched baseline (`FixedSchedule`
-  searching the same 10-day window) is the natural next experiment and has
-  not been run.
+- **The horizon-matched control beats the learned policy. The ML is not the
+  reason this works.** An earlier version of this section called the win
+  "likely a horizon artifact" and said the experiment "has not been run."
+  It has now been run, and it confirmed the suspicion — with a larger margin
+  than expected. `random_in_horizon` draws its retry hour **uniformly at
+  random** from the identical candidate set `LearnedPolicy` ranks, starting
+  from the identical cooldown-aware hour (`policies.legal_candidate_hours`
+  and `policies.cooldown_aware_start` are shared by both — pinned by a test
+  asserting object *identity*, not equality, so the control cannot drift).
+  Results, recovered per 1000 failures:
+
+  | Regime | `random_in_horizon` | `encore_learned` | Winner |
+  |---|---:|---:|---|
+  | `r0_base` *(trained on)* | ₹1,82,359.09 | ₹1,88,259.09 | learned, by 3% |
+  | `r1_shifted` *(held-out)* | **₹2,20,425.10** | ₹1,50,291.50 | **random, by 47%** |
+  | `r2_no_signal` | **₹1,18,831.58** | ₹1,07,677.63 | **random, by 10%** |
+
+  Not a brute-force win: on `r1_shifted` the control recovered more money
+  with **fewer** attempts (~1,327 vs ~1,436 per 1000 failures), and the wall
+  caps every policy at 3 retries identically. Reproduced across four
+  independent rng streams (ratios 1.47, 1.48, 1.47, 1.51 on `r1_shifted`;
+  4/4). Note also that `fixed_spread10` — a dumb T+3/T+6/T+9 heuristic with
+  no model whatsoever — reaches 2.71x on `r1_shifted`, i.e. most of the
+  headline multiple is available with no learning at all. **The surviving
+  claim is "beats the industry-standard T+1/T+2/T+3 schedule 2.85x," not
+  "learned when customers have money."** `BROKELOG.md` entry 9.
+
+- **Why it fails is a two-day miss at a step function, not a bad feature.**
+  The first hypothesis — that the hardcoded `day_of_month in (1, 2, 7, 8)`
+  "near-payday flag" in `model.featurize` was the culprit — was tested and
+  **was wrong**. `encore_learned_nopayday` (same model, flag removed,
+  `day_of_month` retained so timing stays learnable) moved `r1_shifted` from
+  ₹1,50,291.50 to only ₹1,54,867.75, still 0.70x of random. Measuring where
+  retries actually land found the real cause. In `r1_shifted` (salary days
+  `[3, 10, 25]`, weights `[0.2, 0.3, 0.5]`) success is a **step function at
+  day 25**:
+
+  ```
+  encore_learned    day   21  22  23  24  25  26  27
+                    tried 165  24 219 138  14  56  46
+                    win%    2%  0%  3%  0%100%100%100%
+  ```
+
+  The model concentrates 384 of ~1,064 retries on days 21 and 23 — two days
+  before salary lands, where success is 2–3% — and places just 14 on day 25.
+  Over days 25–30 it lands ~151 retries against the random control's ~237.
+  Against a wall-enforced 3-retry budget, that gap is the entire difference.
+  The model is not ignoring payday; it targets that window slightly *more*
+  than random (23.9% vs 20.8% of retries in days 24–27). It is
+  systematically ~2 days early, and earliness at a step function is
+  indistinguishable from being wrong. A confident near-miss is worse than no
+  opinion, because it spends a capped budget on days that are reliably empty.
+  `BROKELOG.md` entry 10.
+
+- **That step function is a simulator artifact, and the magnitude of the
+  above is flattered by it.** `Portfolio.debit` succeeds deterministically
+  once the balance clears, so post-payday success is exactly 100% and
+  pre-payday is near 0%. Real balances do not behave like a light switch,
+  and a 2-day error would almost certainly be punished less harshly in
+  production. The *direction* of the finding is sound; treat the 47% as
+  simulator-specific. Also unestablished: *why* the model settles on days
+  21–23 specifically. An asymmetric-loss retrain (penalising early retries
+  harder than late ones) is the obvious next experiment and has not been run.
+
 - **Months are 30 days, always** (`DAYS_PER_MONTH = 30`,
   `src/encore/domain.py`). No real calendar, no leap years, no 28/29/31-day
   variation.

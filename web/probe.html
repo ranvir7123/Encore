@@ -1,0 +1,86 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Pyodide probe</title>
+<style>body{font:14px ui-monospace,monospace;padding:1rem;background:#111;color:#0f0}
+.err{color:#f66}.ok{color:#6f6}.info{color:#9cf}</style></head>
+<body><h3>Encore / Pyodide feasibility probe</h3><pre id="out">starting...</pre>
+<script>
+const PYODIDE_VERSION = "0.28.3";
+const out = document.getElementById("out");
+function log(msg, cls="") {
+  const line = `[${(performance.now()/1000).toFixed(2)}s] ${msg}`;
+  console.log(line);
+  out.innerHTML += `\n<span class="${cls}">${line}</span>`;
+}
+async function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = res; s.onerror = () => rej(new Error("404 " + src));
+    document.head.appendChild(s);
+  });
+}
+(async () => {
+  try {
+    log("loading pyodide v" + PYODIDE_VERSION + " ...", "info");
+    await loadScript(`https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/pyodide.js`);
+    const pyodide = await loadPyodide({ indexURL: `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/` });
+    log("PYODIDE LOADED", "ok");
+    log("python version: " + pyodide.runPython("import sys; sys.version"), "ok");
+
+    // --- fetch the REAL encore source files and mount them ---
+    const MODULES = ["__init__","domain","wall","simulator","policies","audit","scheduler"];
+    pyodide.FS.mkdirTree("/enc/encore");
+    for (const m of MODULES) {
+      const r = await fetch(`/src/encore/${m}.py`);
+      if (!r.ok) { log(`FETCH FAILED ${m}.py -> ${r.status}`, "err"); continue; }
+      pyodide.FS.writeFile(`/enc/encore/${m}.py`, await r.text());
+    }
+    log("wrote " + MODULES.length + " real encore modules to pyodide FS", "ok");
+    pyodide.runPython(`import sys; sys.path.insert(0, "/enc")`);
+
+    // --- TIER 1: the wall, zero third-party deps ---
+    const wallResult = pyodide.runPython(`
+from encore.wall import decide, SequenceState, WallConfig
+from encore.domain import ProposedAction, ActionKind, DeclineCode
+a = ProposedAction(ActionKind.RETRY, "cust_test", "cyc1", 19900, 2, 1)
+s = SequenceState(DeclineCode.INSUFFICIENT_FUNDS, 0, 0, None, False)
+d = decide(a, s, WallConfig())
+f"allowed={d.allowed} reason={d.reason}"
+`);
+    log("TIER 1 wall.decide() -> " + wallResult, "ok");
+
+    const killed = pyodide.runPython(`
+s2 = SequenceState(DeclineCode.INSUFFICIENT_FUNDS, 0, 0, None, True)
+d2 = decide(a, s2, WallConfig())
+f"allowed={d2.allowed} reason={d2.reason}"
+`);
+    log("TIER 1 killed-sequence -> " + killed, "ok");
+
+    // --- TIER 2: a real simulation, still zero third-party deps ---
+    const t0 = performance.now();
+    const sim = pyodide.runPython(`
+from encore.simulator import Portfolio, RegimeConfig
+# r0_base, verbatim from evaluate.py REGIMES
+r0 = RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05)
+p = Portfolio.generate(100, r0, 100)
+fails = p.run_cycle(30, "probe")
+f"{len(fails)} failed debits from 100 customers"
+`);
+    log(`TIER 2 sim (100 customers, 30 days) -> ${sim} in ${((performance.now()-t0)/1000).toFixed(2)}s`, "ok");
+
+    // --- TIER 3: can we get scikit-learn? ---
+    log("loading micropip + scikit-learn (this is the big one)...", "info");
+    const t1 = performance.now();
+    await pyodide.loadPackage("micropip");
+    const micropip = pyodide.pyimport("micropip");
+    await micropip.install("scikit-learn");
+    log(`scikit-learn INSTALLED in ${((performance.now()-t1)/1000).toFixed(2)}s`, "ok");
+    log("sklearn version: " + pyodide.runPython("import sklearn; sklearn.__version__"), "ok");
+    await micropip.install("pydantic");
+    log("pydantic version: " + pyodide.runPython("import pydantic; pydantic.VERSION"), "ok");
+    log("PROBE COMPLETE - all tiers viable", "ok");
+  } catch (e) {
+    log("FATAL: " + e.message, "err");
+    console.error(e);
+  }
+})();
+</script></body></html>

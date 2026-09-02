@@ -1,7 +1,43 @@
+import random
 from typing import Protocol
 
-from encore.domain import HOURS_PER_DAY, ActionKind, FailedDebit, ProposedAction
-from encore.wall import SequenceState
+from encore.domain import HOURS_PER_DAY, ActionKind, FailedDebit, ProposedAction, hour_of_day
+from encore.wall import SequenceState, WallConfig
+
+# LearnedPolicy scans this many days of candidate retry hours per attempt.
+# The horizon-matched baselines below deliberately reuse the same number --
+# that equality is the whole point of the control, so it lives in one place.
+SEARCH_HORIZON_DAYS = 10
+
+
+def legal_candidate_hours(failure_hour: int, cfg: WallConfig,
+                          horizon_days: int = SEARCH_HORIZON_DAYS) -> list[int]:
+    """Every hour within `horizon_days` after failure_hour that falls inside
+    the wall's execution window.
+
+    Moved here from model.py (where it was `_legal_candidates`) so the
+    horizon-matched baselines can search the IDENTICAL candidate set
+    LearnedPolicy searches, from a module importing no third-party packages.
+    A second copy of this logic would silently break the very control it
+    exists to provide, and would also drag scikit-learn into policies.py.
+    """
+    horizon = range(failure_hour + 1, failure_hour + horizon_days * HOURS_PER_DAY)
+    return [h for h in horizon
+            if cfg.window_start_hour <= hour_of_day(h) or hour_of_day(h) < cfg.window_end_hour]
+
+
+def cooldown_aware_start(state: SequenceState, now_hour: int, cfg: WallConfig) -> int:
+    """First hour a retry could legally land, given the wall's cooldown.
+
+    Extracted from LearnedPolicy so a horizon-matched control starts its
+    search at exactly the same hour. Without this, a "random" baseline would
+    also be handicapped by proposing inside the cooldown and burning retry
+    budget on denials -- which would flatter the learned policy for a reason
+    that has nothing to do with learning.
+    """
+    if state.last_attempt_hour is None:
+        return now_hour + 1
+    return max(now_hour + 1, state.last_attempt_hour + cfg.cooldown_hours)
 
 
 class Policy(Protocol):
@@ -33,3 +69,58 @@ class FixedSchedule:
         target_day = (failed.at_hour // HOURS_PER_DAY) + (n + 1)
         return ProposedAction(ActionKind.RETRY, failed.customer_id, failed.cycle_id,
                               failed.amount_paise, target_day * HOURS_PER_DAY + 23, n + 1)
+
+
+class FixedSpread10:
+    """Practical horizon-matched baseline: the same 10-day reach LearnedPolicy
+    has, spent dumbly -- T+3, T+6, T+9 at 23:00 (23:00 is inside the wall's
+    22:00-07:00 execution window, and the 3-day spacing clears the 24h
+    cooldown by construction).
+
+    Answers: does the learned policy beat a sensible heuristic that simply
+    reaches as far into the month as it does? Contrast with FixedSchedule,
+    whose T+1/T+2/T+3 can only ever see the three days after the failure.
+    """
+    name = "fixed_spread10"
+
+    def __init__(self, cfg: WallConfig | None = None) -> None:
+        self._cfg = cfg or WallConfig()
+
+    def propose(self, failed, state, now_hour):
+        n = state.retries_attempted
+        if n >= self._cfg.max_retries_per_cycle:
+            return None
+        target_day = (failed.at_hour // HOURS_PER_DAY) + 3 * (n + 1)
+        return ProposedAction(ActionKind.RETRY, failed.customer_id, failed.cycle_id,
+                              failed.amount_paise, target_day * HOURS_PER_DAY + 23, n + 1)
+
+
+class RandomInHorizon:
+    """Horizon-matched SCIENTIFIC control: identical candidate set and
+    identical cooldown-aware start to LearnedPolicy, but the hour is drawn
+    uniformly at random instead of ranked by the model.
+
+    This is the baseline that isolates the one thing in question -- whether
+    the model's *ranking* beats chance -- from the width of the window it
+    ranks over. If encore_learned beats fixed_t123 but merely ties this, the
+    win was reach, not timing intelligence.
+
+    rng is injected, never constructed internally (CLAUDE.md: all randomness
+    from seeded random.Random instances passed explicitly).
+    """
+    name = "random_in_horizon"
+
+    def __init__(self, rng: random.Random, cfg: WallConfig | None = None) -> None:
+        self.rng = rng
+        self._cfg = cfg or WallConfig()
+
+    def propose(self, failed, state, now_hour):
+        if state.retries_attempted >= self._cfg.max_retries_per_cycle:
+            return None
+        start = cooldown_aware_start(state, now_hour, self._cfg)
+        candidates = legal_candidate_hours(start - 1, self._cfg)
+        if not candidates:
+            return None
+        return ProposedAction(ActionKind.RETRY, failed.customer_id, failed.cycle_id,
+                              failed.amount_paise, self.rng.choice(candidates),
+                              state.retries_attempted + 1)

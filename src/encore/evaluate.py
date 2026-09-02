@@ -1,4 +1,5 @@
 import json
+import random
 from collections.abc import Callable
 from pathlib import Path
 
@@ -6,7 +7,13 @@ from encore.audit import AttemptLedger, AuditLog
 from encore.domain import ActionKind, DeclineCode, ProposedAction
 from encore.model import LearnedPolicy, generate_training_data, train
 from encore.parser import ReplyIntent, parse_keyword
-from encore.policies import FixedSchedule, ImmediateRetry3, Policy
+from encore.policies import (
+    FixedSchedule,
+    FixedSpread10,
+    ImmediateRetry3,
+    Policy,
+    RandomInHorizon,
+)
 from encore.scheduler import Scheduler, SimulatedRail
 from encore.simulator import Portfolio, RegimeConfig
 from encore.wall import SequenceState, WallConfig, decide
@@ -27,6 +34,12 @@ REGIMES: dict[str, RegimeConfig] = {
 # Disjoint from EVAL_SEED_FLOOR below so no eval seed ever leaks into training.
 TRAIN_SEEDS = [1, 2, 3, 4, 5]
 EVAL_SEED_FLOOR = 100
+
+# Fixed stream for RandomInHorizon so the matrix is reproducible. Constructed
+# fresh per regime (below), consumed across that regime's seeds in order --
+# deterministic because the seed list iterates in a fixed order. Disjoint from
+# the training rng (seed * 7919 in model.generate_training_data).
+RANDOM_BASELINE_SEED = 20260901
 
 
 def count_violations(records: list[dict]) -> int:
@@ -83,11 +96,31 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
     # One model, trained once on r0_base/seeds 1-5, reused across every cell.
     X, y = generate_training_data(REGIMES["r0_base"], n_customers=n_customers, seeds=TRAIN_SEEDS)
     clf = train(X, y)
+
+    # Second model, identical except the hardcoded (1, 2, 7, 8) near-payday
+    # indicator is removed from the feature vector. day_of_month survives, so
+    # payday timing stays learnable -- it just stops being pre-answered with
+    # r0_base's calendar. BROKELOG entry 9 is why this exists: the flagged
+    # model loses to a uniform-random control under distribution shift.
+    X_np, y_np = generate_training_data(REGIMES["r0_base"], n_customers=n_customers,
+                                        seeds=TRAIN_SEEDS, payday_flag=False)
+    clf_nopayday = train(X_np, y_np)
     wall_cfg = WallConfig()
 
     results: dict[str, dict] = {}
     for regime_name, regime in REGIMES.items():
-        policies: list[Policy] = [ImmediateRetry3(), FixedSchedule(), LearnedPolicy(clf)]
+        # fixed_spread10 and random_in_horizon are the horizon-matched controls:
+        # both reach as far into the month as LearnedPolicy does, so a win over
+        # them cannot be explained by search width alone. See policies.py.
+        policies: list[Policy] = [
+            ImmediateRetry3(),
+            FixedSchedule(),
+            FixedSpread10(),
+            RandomInHorizon(random.Random(RANDOM_BASELINE_SEED)),
+            LearnedPolicy(clf),
+            LearnedPolicy(clf_nopayday, payday_flag=False,
+                          name="encore_learned_nopayday"),
+        ]
         for policy in policies:
             cell = f"{regime_name}/{policy.name}"
             recovered_paise = 0

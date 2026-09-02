@@ -497,3 +497,195 @@ edited after the fact.
   `execute_at_hour` entirely (a human pays the link whenever they click
   through). Fix commit: `7c0b956`.
 - **Still open:** nothing.
+
+### 2026-09-01 — The demo script's own command now creates zero payment links
+
+- **What happened:** `docs/demo-script.md`'s Beat 5 instructs the operator to
+  record with `PYTHONUNBUFFERED=1 uv run python -m encore.demo --n 4
+  --timeout 240`. Re-verified during handoff review: that command creates
+  **no** payment links at all. Every one of the four attempts is
+  short-circuited as an already-executed ledger hit, so there is nothing on
+  screen to pay and the beat is unfilmable as written.
+- **Evidence:** `runs/demo_ledger.txt` holds exactly four consumed
+  `reference_id`s, and they are exactly the first four soft-decline failures
+  `_first_n_soft_failures(4)` returns. Enumerated against the live ledger and
+  the seed-100 kill set:
+  ```
+    n= 1  cust_0113  INR   999.00  LEDGER-HIT (skipped, no link)
+    n= 2  cust_0403  INR   199.00  LEDGER-HIT + WALL-DENIED sequence_killed
+    n= 3  cust_0092  INR   999.00  LEDGER-HIT (skipped, no link)
+    n= 4  cust_0417  INR   199.00  LEDGER-HIT + WALL-DENIED sequence_killed
+    n= 5  cust_0447  INR   199.00  FRESH -> creates a REAL payment link
+  ```
+  A second, independent instance of the same failure: running
+  `--dry-run --n 24` and then `--dry-run --n 6` produced six skip lines and
+  zero created links, because the dry-run keeps its *own* accumulating
+  ledger (`runs/demo_ledger_dryrun.txt`, via `run_demo_slice`'s `_dryrun`
+  suffix) that no document mentioned.
+- **Root cause:** the four `reference_id`s in `demo_ledger.txt` were consumed
+  by the original live evidence run recorded in commit `029db48` — the very
+  run the script was written to reproduce. `AttemptLedger.already_executed`
+  is checked *before* link creation, and is permanent by design, because a
+  `reference_id` is consumed for good at Razorpay on first use. So the
+  idempotency guarantee did precisely its job and, in doing so, made its own
+  demonstration non-repeatable. Nothing in the code is wrong; the
+  documentation encoded a command whose preconditions the code had already
+  and irreversibly destroyed. The `--n` value was never re-derived after the
+  evidence run, and neither ledger was treated as demo state.
+- **Fix:** `docs/demo-script.md` Beat 5 rewritten and split — a free,
+  networkless `--dry-run --n 8` beat (5a) that shows the wall denying two
+  killed customers, preceded by a mandatory `rm -f
+  runs/demo_ledger_dryrun.txt`; and a live `--n 5 --timeout 120` beat (5b)
+  that creates exactly one fresh link (`cust_0447`, ₹199.00). The four
+  ledger-hit lines are now narrated as the idempotency guarantee firing on
+  camera rather than treated as noise. Also documented that polling is
+  sequential per link at the full `--timeout`, so creating 7 links to pay 1
+  costs ~24 minutes of dead terminal — the reason `--n 5` and not a larger
+  value. Recorded here before fixing, per project rule. Fix commit: see the
+  commit that follows this entry.
+- **Still open:** `runs/demo_ledger.txt` must never be deleted — its
+  `reference_id`s are permanently consumed at Razorpay and a delete would
+  make the code re-attempt them and be rejected mid-recording. There is no
+  guard in the code enforcing this; it is documented convention only. Each
+  future re-record must raise `--n` past the high-water mark by hand.
+
+### 2026-09-01 — The horizon-matched control beats the learned policy; the 2.85x was search width, not learned timing
+
+- **What happened:** `README.md` section 7 already suspected that
+  `encore_learned`'s win was "likely a horizon artifact" because
+  `LearnedPolicy` searches a 10-day candidate window while `FixedSchedule`
+  only tries T+1/T+2/T+3. The horizon-matched baselines were built to settle
+  it. They settled it against us. A control that draws its retry hour
+  **uniformly at random** from the identical 10-day candidate set beats the
+  trained model on 2 of 3 regimes — including `r1_shifted`, the held-out
+  distribution-shift regime the headline number is quoted from.
+- **Evidence:** full matrix, seeds `100,101,102`, 500 customers each,
+  recovered per 1000 failures:
+  ```
+  === r1_shifted ===
+  fixed_t123           Rs 52,774.63   (1.00x)
+  fixed_spread10       Rs143,001.35   (2.71x)
+  random_in_horizon    Rs220,425.10   (4.18x)   <-- control
+  encore_learned       Rs150,291.50   (2.85x)   <-- the headline claim
+  ```
+  Not a brute-force win: in `r1_shifted` the control recovered MORE money
+  using FEWER attempts (~1,327 vs ~1,436 attempts per 1000 failures), and
+  `max_contacts_per_customer` is 3 for both — the wall caps everyone
+  identically. Repeated across four independent rng streams
+  (`20260901, 11111, 22222, 33333`) via a monkeypatch of
+  `evaluate.RANDOM_BASELINE_SEED`, with no production code altered:
+  ```
+  regime          random/learned ratio, by rng seed
+  r0_base         0.97  0.99  0.98  0.99   -> learned wins, by 1-3%, 4/4
+  r1_shifted      1.47  1.48  1.47  1.51   -> RANDOM wins, by 47-51%, 4/4
+  r2_no_signal    1.10  1.12  1.10  1.07   -> RANDOM wins, by 7-12%, 4/4
+  ```
+- **Root cause:** two separate mistakes, one methodological and one in the
+  feature set.
+  (1) *Methodological:* the only baselines ever run were `immediate_x3` and
+  `fixed_t123`, both of which can see at most 3 days past the failure.
+  Search **width** and ranking **quality** were therefore never separated,
+  and every reported multiple silently bundled them. `fixed_spread10` alone
+  (a dumb T+3/T+6/T+9 heuristic with no model at all) recovers 2.71x in
+  `r1_shifted` — i.e. most of the claimed 2.85x is reachable with no
+  learning whatsoever.
+  (2) *Feature set:* `model.featurize` includes
+  `float(day_of_month(candidate_hour) in (1, 2, 7, 8))`, commented
+  "near-payday flag". That is a hardcoded human prior, not a learned one,
+  and it is tuned to `r0_base`, whose `salary_days=[1, 7, 15]` carry weights
+  `[0.6, 0.3, 0.1]` — so 90% of customers are paid on day 1 or day 7 and the
+  flag is a free correct answer. `r1_shifted` sets
+  `salary_days=[3, 10, 25]` with weights `[0.2, 0.3, 0.5]`, putting **50% of
+  customers on day 25**. The model's strongest feature then points
+  confidently at the wrong end of the month, while a uniform draw over 10
+  days catches day 25 by accident. This is why the model is not merely
+  unhelpful under shift but actively *worse than chance*: it has a
+  confident, wrong prior, and chance does not.
+  The `r0_base` result is real but small and is the one place the prior is
+  correct — learned wins by 1-3% there, using ~20% fewer attempts
+  (441 vs 550 per 1000 failures), which is a genuine efficiency gain on the
+  training distribution and nothing more.
+- **Fix:** no fix to the model or the claim yet — this entry records the
+  finding before any of that, per project rule. What *is* committed is the
+  experiment that produced it: `policies.FixedSpread10` and
+  `policies.RandomInHorizon`, `legal_candidate_hours` and
+  `cooldown_aware_start` moved from `model.py` into `policies.py` so the
+  control provably searches the same candidate set from the same starting
+  hour (pinned by `tests/test_policies.py::
+  test_learned_and_control_share_one_candidate_function`, which asserts
+  identity, not equality), and both controls added to the eval matrix.
+  13 new tests, suite 61 -> 74. Fix commit: `5e6fd2c`.
+- **Still open:** (a) `README.md`'s results table and section 2 headline
+  still quote the 3-policy matrix and must be rewritten around the 5-policy
+  one — the honest surviving claim is "beats the industry-standard T+1/T+2/T+3
+  schedule 2.85x", NOT "learned when customers have money". (b) `runs/eval.json`
+  in the main checkout is stale (3 policies). (c) Whether a model without the
+  hardcoded `(1, 2, 7, 8)` flag — forced to learn payday timing from
+  `day_of_month` alone — would survive the shift is untested, and is now the
+  single most interesting open question in the project. (d)
+  `docs/what-broke-essay.md` and `docs/demo-script.md` Beat 3 both quote the
+  superseded numbers.
+
+### 2026-09-01 — Removing the hardcoded payday flag did NOT fix the model; the real failure is a two-day near-miss at a step function
+
+- **What happened:** BROKELOG entry 9 blamed `featurize`'s hardcoded
+  `day_of_month in (1, 2, 7, 8)` indicator for the learned policy losing to a
+  uniform-random control under distribution shift. A de-biased model was
+  trained with that feature removed (`payday_flag=False`; `day_of_month`
+  retained, so payday timing stays learnable). **It did not fix anything.**
+  The hypothesis in entry 9 was wrong, or at best a small part of the story.
+- **Evidence:** full 6-policy matrix, seeds `100,101,102`, 500 customers,
+  recovered per 1000 failures:
+  ```
+                             r0_base      r1_shifted    r2_no_signal
+  random_in_horizon        182,359.09      220,425.10     118,831.58
+  encore_learned           188,259.09      150,291.50     107,677.63
+  encore_learned_nopayday  188,259.09      154,867.75     107,411.84
+  ```
+  De-biasing moved `r1_shifted` from 150,291 to 154,868 -- a 3% gain that
+  leaves the model still at 0.70x of random. `r0_base` is unchanged to the
+  paisa and `r2_no_signal` is marginally worse. The flag was not the cause.
+  Diagnostic that found the real one -- executions by day-of-month in
+  `r1_shifted` (salary_days `[3, 10, 25]`, weights `[0.2, 0.3, 0.5]`):
+  ```
+  encore_learned    day   18  19  20  21  22  23  24  25  26  27  28
+                    tried 44  10  37 165  24 219 138  14  56  46  20
+                    win%  14%  0%  0%  2%  0%  3%  0%100%100%100%100%
+
+  random_in_horizon tried 42  40  49  39  39  39  63  55  48  38  33
+                    win%   5% 10%  2%  3%  0%  0%  0%100%100%100%100%
+  ```
+- **Root cause:** success is a **step function at day 25**, and the model
+  learned the right *region* on the wrong *side* of it. It concentrates 384
+  of ~1,064 retries on days 21 and 23 -- two days before salary lands, where
+  the observed success rate is 2-3% -- and places only 14 on day 25 itself.
+  Summed over days 25-30 (the 100%-success zone) the model lands ~151
+  retries against the random control's ~237. That ~86-retry gap, against a
+  wall-enforced budget of 3 retries per customer, is the whole 47%
+  difference. The failure is therefore not "the model ignores payday" (it
+  targets the payday window slightly MORE often than random: 23.9% vs 20.8%
+  of retries in days 24-27) but "the model is systematically ~2 days early,
+  and earliness at a step function is indistinguishable from being wrong."
+  A confident near-miss is worse than no opinion at all, because it spends a
+  capped budget on days that are reliably empty while a uniform draw at
+  least samples the far side of the cliff.
+- **Fix:** none applied. Both models are kept in the matrix
+  (`encore_learned`, `encore_learned_nopayday`) so the negative result is
+  reproducible rather than quietly dropped. `payday_flag` is a documented
+  switch on `featurize`/`generate_training_data`/`LearnedPolicy`, defaulting
+  to `True` so previously published numbers stay byte-reproducible (pinned by
+  `tests/test_model.py::test_payday_flag_default_is_backward_compatible`).
+  Suite 74 -> 76. Fix commit: `2a460a0`.
+- **Still open:** (a) **The step function is a simulator artifact and must be
+  disclosed as one.** `Portfolio.debit` succeeds deterministically once the
+  balance clears, so post-payday success is exactly 100% and pre-payday is
+  near 0%. Real balances do not behave like this, and the sharpness of the
+  cliff almost certainly overstates how badly a 2-day error would be punished
+  in production. The *direction* of the finding is sound; the magnitude is
+  simulator-flattered. (b) Why the model settles on days 21-23 specifically
+  is not established -- plausibly an r0_base-derived "later in the month is
+  better" pattern truncated by the 10-day search horizon, but that is a
+  hypothesis, not a measurement. (c) An asymmetric-loss retrain (penalising
+  early retries harder than late ones) is the obvious next experiment and has
+  not been run. (d) README, `docs/demo-script.md` Beat 3, and
+  `docs/what-broke-essay.md` all still quote the superseded 3-policy matrix.
