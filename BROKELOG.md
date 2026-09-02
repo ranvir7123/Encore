@@ -879,7 +879,7 @@ edited after the fact.
   HH:MM:SS". `RazorpayFailureSource` sets `cycle_id` to the failed payment's
   own id with the `pay_` prefix stripped, so attempt_ids are unique per
   original failure and stay within Razorpay's 40-character reference_id
-  limit (pinned by a test). Commit hash backfilled below.
+  limit (pinned by a test). Fix commit: `a57463c`.
 - **Still open:** the video take has to keep the operator's hands on the
   checkout within the window; the demo script says so. The three links from
   this take remain on the account (one paid, two `created`), counted against
