@@ -847,7 +847,7 @@ edited after the fact.
   -- retryable inside the wall's cap, which is how Razorpay's own T+1/T+2/T+3
   treats any failed subscription charge -- rather than being dropped. The
   simulator never produces it and `model.SOFT_CODES` is untouched, so no
-  eval cell moves. Commit hash backfilled below.
+  eval cell moves. Fix commit: `bc69f06`.
 - **Still open:** what a real live-mode insufficient-funds decline reports as
   `error_reason` is unverified, so the agent cannot yet tell "no money" from
   "bank said no" on the real rail; README §7 says so.
