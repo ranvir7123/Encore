@@ -19,7 +19,7 @@ from encore.report import format_rupees
 # policies evaluate.run_matrix actually constructs and the regimes it runs,
 # so renaming a policy in evaluate.py fails a test instead of silently
 # desyncing the deployed page.
-REGIME_ORDER = ["r0_base", "r1_shifted", "r2_no_signal"]
+REGIME_ORDER = ["r0_base", "r1_shifted", "r2_no_signal", "r3_noisy_promise"]
 POLICY_ORDER = [
     "immediate_x3",
     "fixed_t123",
@@ -27,13 +27,16 @@ POLICY_ORDER = [
     "random_in_horizon",
     "encore_learned",
     "encore_learned_nopayday",
+    "promise_aware",
 ]
 
 # Tier A vs Tier B (see docs/superpowers/specs/2026-09-01-encore-web-design.md).
 # The four stdlib policies can run live in the browser through Pyodide; the two
 # model-backed ones cannot, because scikit-learn takes 61.7 s to install there.
 LIVE_POLICIES = ["immediate_x3", "fixed_t123", "fixed_spread10", "random_in_horizon"]
-PRECOMPUTED_POLICIES = ["encore_learned", "encore_learned_nopayday"]
+# promise_aware is stdlib but needs the reply parser (pydantic), which is
+# not a Tier A module in the browser -- so it is precomputed, not live.
+PRECOMPUTED_POLICIES = ["encore_learned", "encore_learned_nopayday", "promise_aware"]
 
 # The claim that survives is measured against this policy: Razorpay's
 # documented T+1/T+2/T+3 subscription retry shape.

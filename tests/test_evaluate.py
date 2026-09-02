@@ -72,3 +72,25 @@ def test_no_policy_executes_past_the_simulated_horizon(tmp_path: Path):
         f"{len(offenders)} execution(s) past hour {EVAL_HORIZON_HOURS} "
         f"(day {EVAL_HORIZON_HOURS // 24}): {offenders[:5]}"
     )
+
+
+def test_matrix_has_28_cells_and_promise_aware_is_present(tmp_path: Path):
+    results = run_matrix(seeds=[100], out_dir=tmp_path, n_customers=60)
+    assert len(results) == 28
+    assert "r3_noisy_promise/promise_aware" in results
+    assert all(cell["compliance_violations"] == 0 for cell in results.values())
+
+
+def test_promises_reach_the_policy_from_parsed_replies(tmp_path: Path, monkeypatch):
+    from encore.policies import PromiseAwarePolicy
+
+    seen: dict = {}
+    real = PromiseAwarePolicy.propose
+
+    def spy(self, failed, state, now_hour):
+        seen.setdefault("promises", dict(self.promises))
+        return real(self, failed, state, now_hour)
+
+    monkeypatch.setattr(PromiseAwarePolicy, "propose", spy)
+    run_matrix(seeds=[100], out_dir=tmp_path, n_customers=200)
+    assert seen["promises"] and all(1 <= d <= 30 for d in seen["promises"].values())

@@ -12,6 +12,7 @@ from encore.policies import (
     FixedSpread10,
     ImmediateRetry3,
     Policy,
+    PromiseAwarePolicy,
     RandomInHorizon,
 )
 from encore.scheduler import Scheduler, SimulatedRail
@@ -27,6 +28,10 @@ REGIMES: dict[str, RegimeConfig] = {
     "r0_base": RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05),
     "r1_shifted": RegimeConfig([3, 10, 25], [0.2, 0.3, 0.5], 0.15, 0.12),
     "r2_no_signal": RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05, uniform_credits=True),
+    # r1_shifted's world, but customers are wrong about payday by up to 2 days
+    # and 30% name a random day: the honesty guard for promise_aware.
+    "r3_noisy_promise": RegimeConfig([3, 10, 25], [0.2, 0.3, 0.5], 0.15, 0.12,
+                                     promise_error_days=2, false_promise_rate=0.3),
 }
 
 # Training is always and only on these seeds, regime r0_base -- one model,
@@ -129,6 +134,11 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
             LearnedPolicy(clf_nopayday, payday_flag=False,
                           name="encore_learned_nopayday",
                           max_hour=EVAL_HORIZON_HOURS),
+            # Deterministic, no model: the day comes from the parsed reply when
+            # there is one, else fixed_spread10's schedule. Compared against
+            # fixed_spread10 (its own fallback) the delta isolates the promise.
+            PromiseAwarePolicy(FixedSpread10(max_hour=EVAL_HORIZON_HOURS),
+                               max_hour=EVAL_HORIZON_HOURS),
         ]
         for policy in policies:
             cell = f"{regime_name}/{policy.name}"
@@ -151,6 +161,15 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
                 # BEFORE scheduling, from this seed's own replies only
                 killed = {r.customer_id for r in p.reply_events()
                          if parse_fn(r.text).kind == "cancel"}
+                # promise-to-pay days feed PromiseAwarePolicy the way cancel replies
+                # feed the kill set: parsed once per seed, before scheduling.
+                promises: dict[str, int] = {}
+                for r in p.reply_events():
+                    intent = parse_fn(r.text)
+                    if intent.kind == "promise_to_pay" and intent.promise_day is not None:
+                        promises[r.customer_id] = intent.promise_day
+                if hasattr(policy, "promises"):
+                    policy.promises = promises
 
                 slug = f"{regime_name}__{policy.name}__s{seed}"
                 audit_path = out_dir / f"{slug}_audit.jsonl"
