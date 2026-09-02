@@ -113,7 +113,8 @@ def test_headline_figures_come_from_the_generated_data_not_a_literal():
     assert "3.00x" in out          # 150000 / 50000
     assert "+50%" in out           # 225000 / 150000
     assert "104" in out
-    assert ">0<" in out            # zero violations
+    assert "stat-card" in out
+    assert ">0 <" in out           # zero violations
 
 
 def test_renderers_escape_values_that_trace_back_to_the_audit_log():

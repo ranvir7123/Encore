@@ -206,31 +206,37 @@ def render_provenance(provenance: dict) -> str:
 
 def render_headline_figures(results: dict, cliff: dict, *, regime: str = "r1_shifted",
                             test_count: int = 0) -> str:
-    """The four numbers in the hero. Every one is read from the generated data,
-    so the hero cannot drift from the matrix underneath it."""
+    """The four headline numbers, as lab-report stat cards. Every one is read
+    from the generated data, so the hero cannot drift from the matrix under it."""
     head = results["headline"][regime]
     baseline = results["industry_baseline"]
     learned_ratio = head["learned_over_fixed_t123"]
     random_ratio = head["random_over_learned"]
-    figures = [
-        (f"{learned_ratio:.2f}x" if learned_ratio else "n/a",
-         f"recovered over {baseline}", "the claim that survived", "fig-good"),
-        (str(results["totals"]["compliance_violations"]),
-         f"wall violations in {results['totals']['cells']} cells",
-         "checked by replaying every execution", "fig-good"),
-        (f"+{round((random_ratio - 1) * 100)}%" if random_ratio else "n/a",
-         "for uniform random over the model",
-         "our own control, on held-out data", "fig-flag"),
-        (str(test_count), "tests passing",
-         "24 of them adversarial, against the wall", "fig-plain"),
+    cells = results["totals"]["cells"]
+
+    cards = [
+        (f"{learned_ratio:.2f}x" if learned_ratio else "n/a", "recovered",
+         "Recovery vs industry baseline",
+         f"Against {baseline}, Razorpay's documented T+1/T+2/T+3 shape.", "is-good"),
+        (str(results["totals"]["compliance_violations"]), f"of {cells} cells",
+         "Compliance violations",
+         "Checked by replaying every execution record against the wall.", "is-good"),
+        (f"+{round((random_ratio - 1) * 100)}%" if random_ratio else "n/a", "vs the model",
+         "Uniform random, held-out regime",
+         "Our own control. It beat the trained policy, and we published it.", "is-flag"),
+        (str(test_count), "passing", "Test suite",
+         "24 of them adversarial, aimed squarely at the wall.", ""),
     ]
     items = "".join(
-        f'<li class="figure {cls}"><span class="figure-value">{_esc(value)}</span>'
-        f'<span class="figure-label">{_esc(label)}</span>'
-        f'<span class="figure-note">{_esc(note)}</span></li>'
-        for value, label, note, cls in figures
+        f'<div class="stat-card {cls}">'
+        f'<h3>{_esc(title)}</h3>'
+        f'<div class="stat-value">{_esc(value)} <span class="unit">{_esc(unit)}</span></div>'
+        f"<hr>"
+        f"<p>{_esc(note)}</p>"
+        "</div>"
+        for value, unit, title, note, cls in cards
     )
-    return f'<ul class="figures">{items}</ul>'
+    return f'<div class="stat-grid">{items}</div>'
 
 
 def render_money(paise: int) -> str:
