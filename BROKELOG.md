@@ -689,3 +689,269 @@ edited after the fact.
   early retries harder than late ones) is the obvious next experiment and has
   not been run. (d) README, `docs/demo-script.md` Beat 3, and
   `docs/what-broke-essay.md` all still quote the superseded 3-policy matrix.
+
+### 2026-09-02 — The control's margin was partly free wins past the end of the simulated month
+- **What happened:** While building the day-of-month cliff chart for the web
+  site, the `random_in_horizon` series showed a 100% success rate on
+  day-of-month 1-5 — the far side of a wrap-around, not the payday window.
+  Retries are proposed up to `SEARCH_HORIZON_DAYS = 10` past the failure, but
+  `run_cycle(30, ...)` only simulates 30 days, so a late-month failure can be
+  retried at an absolute day >= 30. `Portfolio.debit` indexes
+  `balance_history[at_hour // 24]` and, when that index is out of range,
+  falls back to the live `c.balance_paise` — which at end-of-simulation is
+  post-salary-credit and almost always clears the amount. Every retry landing
+  past the window is therefore a near-guaranteed success that no policy
+  earned. `encore_learned` never proposes into that dead zone; the uniform
+  control does, because it draws uniformly over the whole horizon.
+- **Evidence:** grouping every `execution` record in `runs/*_audit.jsonl` by
+  whether `at_hour // 24 >= 30`:
+
+  ```
+  r1_shifted / encore_learned     inside window 1064 won 234 (22.0%)
+                                  beyond day 30     0 won   0
+  r1_shifted / random_in_horizon  inside window  931 won 313 (33.6%)
+                                  beyond day 30    52 won  52 (100.0%)
+  ```
+
+  Subtracting only the beyond-window recoveries from each cell's published
+  `recovered_per_1000_failures_paise`:
+
+  ```
+  cell                            published/1000   free  corrected/1000   drop
+  r1_shifted/random_in_horizon      Rs2,20,425.10    52    Rs1,89,186.23  14.2%
+  r2_no_signal/random_in_horizon    Rs1,18,831.58    32    Rs1,00,715.79  15.2%
+  r2_no_signal/fixed_spread10         Rs81,938.16     3      Rs78,915.79   3.7%
+  every other cell (15 of 18)                  --     0               --   0.0%
+  ```
+
+  Effect on the two ratios the project reports:
+
+  ```
+  regime         random/learned            learned/fixed_t123
+  r0_base        0.969 -> 0.969 (no change)   2.767 -> 2.767 (no change)
+  r1_shifted     1.467 -> 1.259               2.848 -> 2.848 (no change)
+  r2_no_signal   1.104 -> 0.935  (FLIPS)      3.166 -> 3.166 (no change)
+  ```
+
+- **Root cause:** two independent gaps that only bite in combination.
+  (a) `policies.legal_candidate_hours` clamps candidates to the wall's
+  execution window but not to the simulated horizon, so hours past the end of
+  the world are legal proposals. (b) `Portfolio.debit` and
+  `Portfolio.would_succeed` treat "no balance history for this day" as
+  "use the live balance" rather than as "unknown/out of range". The fallback
+  was written for far-future queries and is documented as deliberate, but it
+  silently converts an out-of-range retry into a free success. The learned
+  policy is insulated by accident, not by design: its ranking simply never
+  chooses those hours, so the bias lands entirely on the uniform control that
+  the whole refutation depends on.
+- **Fix:** not yet applied — logged before fixing, per CLAUDE.md. The choice
+  between clamping proposals to the simulated horizon, extending
+  `balance_history` to cover the full search horizon, and treating
+  out-of-range days as a hard failure is a design decision with different
+  downstream effects, and it rewrites README, the essay, and the demo script.
+- **Still open:** the refutation survives but shrinks and narrows. Random
+  still beats the learned policy on the held-out `r1_shifted` by 26% rather
+  than 47%, but "beats the model on 2 of 3 regimes" becomes "on 1 of 3" —
+  `r2_no_signal` flips to the model by 7%. The claim that never depended on
+  this — 2.85x over the industry-standard T+1/T+2/T+3 schedule with zero
+  violations in 18 cells — is arithmetically untouched, because neither
+  `encore_learned` nor `fixed_t123` scores a single beyond-window win in any
+  regime. The four-RNG-stream reproduction in entry 9 (ratios 1.47/1.48/
+  1.47/1.51) was measuring the inflated quantity and needs re-running after
+  the fix.
+
+### 2026-09-02 — The predicted size of the horizon-clamp correction was wrong by an order of magnitude
+- **What happened:** Entry 11 predicted, from a subtraction over the audit
+  logs, that clamping retries to the simulated horizon would drop
+  `r1_shifted/random_in_horizon` from ₹2,20,425.10 to ₹1,89,186.23 (-14.2%)
+  and flip `r2_no_signal` from the control to the model. The clamp was
+  implemented and the matrix re-run. Neither happened. The control lost 0.7%
+  on `r1_shifted` and 1.3% on `r2_no_signal`, and `r2_no_signal` did not flip.
+- **Evidence:** same seeds (100,101,102), same 500 customers, before and after
+  the clamp:
+
+  ```
+  cell                              pre-clamp        clamped   change
+  r0_base/random_in_horizon      Rs1,82,359.09  Rs1,86,900.00    +2.5%
+  r1_shifted/random_in_horizon   Rs2,20,425.10  Rs2,18,948.72    -0.7%
+  r2_no_signal/fixed_spread10      Rs81,938.16    Rs78,915.79    -3.7%
+  r2_no_signal/random_in_horizon Rs1,18,831.58  Rs1,17,259.21    -1.3%
+  all 14 other cells                        --             --     0.0%
+
+  regime         random/learned          learned/fixed_t123
+  r0_base        0.969 -> 0.993          2.767 -> 2.767
+  r1_shifted     1.467 -> 1.457          2.848 -> 2.848
+  r2_no_signal   1.104 -> 1.089          3.166 -> 3.166
+  ```
+
+  `uv run pytest -q` -> 89 passed. Violations still 0 across all 18 cells.
+- **Root cause:** the subtraction treated a beyond-window win as a win that
+  would simply disappear. It does not. A retry is a *slot*, not an outcome:
+  when the clamp removes the out-of-range hour, the policy proposes an
+  in-window hour instead and frequently succeeds there. The wall's 3-retry
+  budget is what is scarce, not the individual hour, so the correct
+  counterfactual for 52 removed free wins is "52 retries relocated", not "52
+  recoveries deleted". `r0_base/random_in_horizon` even went *up* 2.5% — it
+  had zero beyond-window executions, so its only change is that the shared
+  `random.Random(RANDOM_BASELINE_SEED)` stream is now consumed differently
+  once other regimes stop drawing out-of-range hours. Post-hoc subtraction
+  over an audit log cannot see either effect; only a re-run can.
+- **Fix:** the clamp itself is kept — it is correct on its own merits, since a
+  retry past the evaluated period is unobservable and must not be scored. What
+  is corrected here is entry 11's **"Still open"** paragraph, which asserted
+  the flip as fact. Per CLAUDE.md past entries are never edited, so this entry
+  supersedes it. `EVAL_HORIZON_HOURS = 30 * HOURS_PER_DAY` in `evaluate.py`,
+  `max_hour` on `legal_candidate_hours` and all five proposing policies, and
+  `tests/test_evaluate.py::test_no_policy_executes_past_the_simulated_horizon`
+  asserts on the audit log so a future policy bypassing
+  `legal_candidate_hours` still trips it. Suite 76 -> 89. Fix commit: `4acb1b2`.
+- **Still open:** the headline claims are unchanged and now rest on a scored
+  window with no free wins in it. The control still beats the learned policy
+  on 2 of 3 regimes (`r1_shifted` 1.46x, `r2_no_signal` 1.09x) and still
+  loses narrowly on the regime it trained on (`r0_base` 0.99x). Entry 9's
+  four-RNG-stream reproduction has not been re-run against the clamp; the
+  main-stream ratio moved only 1.467 -> 1.457, so the conclusion is not in
+  doubt, but the specific numbers 1.47/1.48/1.47/1.51 are pre-clamp and
+  should be relabelled or regenerated before they are quoted again.
+
+### 2026-09-02 — The insufficient-funds test card fails with error_reason "payment_failed", not "insufficient_funds"
+- **What happened:** Razorpay's test-card page lists `4100 2800 0008 0001` as
+  the card that declines for insufficient funds. Three test-mode payments made
+  with it on Payment Links -- the A0 spike link `plink_TX8TUTJx4sCmkX` and the
+  two `encore seed-live` originals for `cust_0005` and `cust_0030` -- all came
+  back from `GET /v1/payments` as `status: "failed"`, `error_code:
+  "BAD_REQUEST_ERROR"`, `error_source: "gateway"`, `error_step:
+  "payment_authorization"`, `error_description: "Payment failed"` and
+  `error_reason: "payment_failed"`. The reason string the docs promise never
+  appeared. With the two-entry table in `sources.py`
+  (`insufficient_funds`, `gateway_technical_error`), all three land in
+  `RazorpayFailureSource.unmapped`, and `encore agent --live 3` would have
+  parked every real failure as `unmapped_error_reason` and retried nothing.
+- **Evidence:** `uv run python scripts/spike_failed_payments.py list`, ~19:00
+  IST:
+
+  ```
+  {"id": "pay_TXCHLEzZwfcdOY", "status": "failed", "amount": 99900, "method": "card", ..., "error_code": "BAD_REQUEST_ERROR", "error_description": "Payment failed", "error_source": "gateway", "error_step": "payment_authorization", "error_reason": "payment_failed", "notes": {"kind": "original", "cycle_id": "live", "customer_id": "cust_0030"}}
+  {"id": "pay_TXCGLl4N2QOjcv", ..., "error_reason": "payment_failed", "notes": {"kind": "original", "cycle_id": "live", "customer_id": "cust_0005"}}
+  {"id": "pay_TXCExIcrL6fcrD", ..., "amount": 19900, "error_reason": "payment_failed", "notes": {"cycle_id": "spike", "customer_id": "cust_spike"}}
+  ```
+
+  The same listing settled the other A0 question in our favour: the
+  `notes` set on each Payment Link arrived on the payment entity intact.
+- **Root cause:** on this test account, card declines reach the Payments API
+  as one generic gateway authorization failure; the per-reason test cards do
+  not surface their reason through `error_reason`. Whether they do on
+  Standard Checkout or in live mode was not tested. The mapping table
+  assumed the documented string would round-trip.
+- **Fix:** `payment_failed` maps to a new soft `DeclineCode.GENERIC_DECLINE`
+  -- retryable inside the wall's cap, which is how Razorpay's own T+1/T+2/T+3
+  treats any failed subscription charge -- rather than being dropped. The
+  simulator never produces it and `model.SOFT_CODES` is untouched, so no
+  eval cell moves. Fix commit: `bc69f06`.
+- **Still open:** what a real live-mode insufficient-funds decline reports as
+  `error_reason` is unverified, so the agent cannot yet tell "no money" from
+  "bank said no" on the real rail; README §7 says so.
+
+### 2026-09-02 — Live rehearsal: the link the operator paid was recorded as a timeout, and a retake would have collided at Razorpay
+- **What happened:** first live run of `encore agent --live 3 --batch 50
+  --speed 6 --timeout 240`. Detection worked (3 real failures found through
+  the Payments API, 0 unmapped), the agent created three real recovery links
+  (`plink_TXCMK5peBCA4t5`, `plink_TXCMST6ys8Yfga`, `plink_TXCMXbSeoFGj3F`),
+  and the batch recovered INR 9,984.00 of INR 28,047.00 on the simulated
+  rail. The operator paid `plink_TXCMST6ys8Yfga` (cust_0005, INR 999.00) and
+  Razorpay captured it (`pay_TXCQdLbRfAi7lW`) -- but the audit log says
+  `outcome: "failure", status: "no_terminal_status_within_timeout"` for all
+  three links, and the board showed INR 0.00 recovered on the real rail.
+- **Evidence:** Razorpay's own timestamps, fetched afterwards: link created
+  19:47:48, payment captured 19:52:00 -- 252 s after creation, against a
+  240 s timeout. The agent's polling was correct; the human loop (the link
+  URL relayed to the operator, the operator opening it, the mock bank page)
+  took four minutes. While planning the retake, a second problem: the live
+  failures were given `cycle_id = "live"`, so a retake's attempt_ids -- which
+  are the Payment Links' `reference_id`s -- would be identical to the first
+  take's (`cust_0005:live:retry:1`). With the ledger kept they are blocked
+  locally and no link is created; with a fresh ledger Razorpay rejects the
+  duplicate reference_id. Either way the second take cannot run.
+- **Root cause:** (1) `--timeout` was sized like a network timeout; it is the
+  time a person has to pay. (2) The cycle id for a real failure carried no
+  identity of the failure itself.
+- **Fix:** `--timeout` defaults to 600 s and every printed link says "pay by
+  HH:MM:SS". `RazorpayFailureSource` sets `cycle_id` to the failed payment's
+  own id with the `pay_` prefix stripped, so attempt_ids are unique per
+  original failure and stay within Razorpay's 40-character reference_id
+  limit (pinned by a test). Fix commit: `a57463c`.
+- **Still open:** the video take has to keep the operator's hands on the
+  checkout within the window; the demo script says so. The three links from
+  this take remain on the account (one paid, two `created`), counted against
+  the 30-link test-mode cap.
+
+### 2026-09-02 — Take 2: the customer paid the ORIGINAL demand after the nudge, and the agent kept waiting on its own link
+- **What happened:** second live take (`encore agent --live 1 --batch 50
+  --speed 6 --timeout 600 --window-s 1200`). Detection found the fresh
+  failure (`pay_TXDSEWfVtIS9GV`, cust_0098, INR 299.00) and the agent created
+  recovery link `plink_TXDTTeY7Q8yapK` with a printed pay-by time. The
+  operator then paid -- on the ORIGINAL link they had failed a minute
+  earlier, not the recovery link. Razorpay captured `pay_TXDV9saQEzX5yb`
+  (INR 299.00, notes `customer_id: cust_0098`) at 20:54:44; the recovery
+  link stayed `created`, the agent polled it until 21:03:07 and recorded
+  `no_terminal_status_within_timeout`. The batch recovered INR 9,486.00 of
+  INR 27,349.00; the real rail again shows INR 0.00.
+- **Evidence:** `GET /v1/payments` for the last 30 minutes at 20:56:35:
+
+  ```
+  ('pay_TXDV9saQEzX5yb', 'captured', 29900, 'cust_0098', '20:54:44')
+  ('pay_TXDUevf5jebJGV', 'failed',   29900, 'cust_0098', '20:54:16')
+  ('pay_TXDSEWfVtIS9GV', 'failed',   29900, 'cust_0098', '20:51:59')
+  ```
+
+  and `fetch_payment_link("plink_TXDTTeY7Q8yapK")` at the same moment:
+  `status: created, amount_paid: 0, payments: []`. Kept under `runs/take2/`.
+- **Root cause:** the agent only ever watched the link it had created. A
+  customer who pays the original demand after a nudge is the most ordinary
+  outcome of dunning -- Stripe's and Chargebee's stop the retry schedule the
+  moment the invoice is paid -- and this loop had no way to see it, so a real
+  recovery was booked as a timeout. The two checkout pages also looked alike
+  (same customer, same amount), which is how the operator picked the wrong
+  one.
+- **Fix:** a capture watch. While a live customer's sequence is open, the
+  agent polls `GET /v1/payments` for a captured payment carrying that
+  customer's notes since the failure; if one appears the sequence ends as
+  recovered with a `self_cured` audit event, no retry executed. The two
+  links now carry checkout titles that cannot be confused: "FAIL THIS ONE"
+  on the original, "PAY THIS ONE" on the recovery. Fix commit: `d884508`.
+- **Still open:** the recovery link that was never paid stays `created` on
+  the account; the agent does not cancel it. Two takes, four real links, and
+  zero real-rail recoveries recorded so far -- take 3 has to land one.
+
+### 2026-09-05 — The LLM parser had never actually run: Haiku fences its JSON, and the fallback would have hidden it
+- **What happened:** first real run of `uv run encore parse-eval` with a key.
+  The keyword row printed (0.675, n=40) and the `claude-haiku-4-5` pass
+  raised `json.decoder.JSONDecodeError: Expecting value: line 1 column 1`.
+  Two raw replies, captured for the first two labeled rows:
+
+  ```
+  claude-haiku-4-5 | 'salary 5 tarikh ko aayegi, tab try karna' | blocks=[('text', '```json\n{\n  "kind": "promise_to_pay",\n  "promise_day": 5\n}\n```')]
+  claude-haiku-4-5 | 'band kar do isko'                         | blocks=[('text', '```json\n{\n  "kind": "cancel",\n  "promise_day": null\n}\n```')]
+  claude-sonnet-5  | 'salary 5 tarikh ko aayegi, tab try karna' | blocks=[('text', '{"kind": "promise_to_pay", "promise_day": 5}')]
+  claude-sonnet-5  | 'band kar do isko'                         | blocks=[('text', '{"kind": "cancel", "promise_day": null}')]
+  ```
+
+  The classifications are right. Haiku wraps them in a markdown fence
+  despite the system prompt's "Return ONLY JSON"; Sonnet does not.
+- **Evidence:** the traceback above, and the two-row probe. It only
+  surfaced because commit 0a28605 made `parse-eval` pass `strict=True`; the
+  original `parse_llm` swallowed every exception into `parse_keyword`, so on
+  the code as it stood two days ago the run would have printed a
+  `claude-haiku-4-5` row identical to the keyword row and nobody would have
+  known. Getting a key at all took two tries (the first was an
+  identity-linked key that needs an `anthropic-workspace-id` header), which
+  is why the parser had never been exercised against the real API.
+- **Root cause:** `json.loads` on the whole text block assumed the model
+  obeys a formatting instruction. A classifier that falls back silently
+  makes that assumption invisible.
+- **Fix:** slice the reply to its outermost `{...}` before `json.loads`, so
+  fenced and bare replies both parse and anything without an object raises.
+  Fix commit: `203897b`.
+- **Still open:** whether the two models also differ on the six `dispute`
+  rows, the reason the LLM rows exist, is what the completed run measures;
+  README §6 carries the result.

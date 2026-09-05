@@ -1,6 +1,13 @@
+import glob
+import json
 from pathlib import Path
 
-from encore.evaluate import REGIMES, count_violations, run_matrix
+from encore.evaluate import (
+    EVAL_HORIZON_HOURS,
+    REGIMES,
+    count_violations,
+    run_matrix,
+)
 
 
 def test_regimes_are_distinct():
@@ -40,3 +47,51 @@ def test_violation_checker_actually_catches_violations(tmp_path: Path):
                 "at_hour": 12, "outcome": "failure", "amount_paise": 100,
                 "original_decline": "mandate_revoked", "attempt_no": 5})
     assert count_violations(log.read_all()) > 0
+
+
+def test_no_policy_executes_past_the_simulated_horizon(tmp_path: Path):
+    """BROKELOG 2026-09-02. run_matrix simulates exactly 30 days, so a retry at
+    day >= 30 has no balance_history entry and Portfolio.debit falls back to the
+    live end-of-simulation balance -- a free success no policy earned. Before
+    the clamp, random_in_horizon scored 52 such wins on r1_shifted at a 100%
+    success rate while encore_learned scored none, which alone was 14% of the
+    control's published margin. This asserts on the audit log rather than on
+    the policies, so it still fails if a future policy bypasses
+    legal_candidate_hours entirely.
+    """
+    run_matrix(seeds=[100], out_dir=tmp_path, n_customers=150)
+    offenders = []
+    for path in sorted(glob.glob(str(tmp_path / "*_audit.jsonl"))):
+        with open(path, encoding="utf-8") as handle:
+            for line in handle:
+                record = json.loads(line)
+                if (record.get("event") == "execution"
+                        and record["at_hour"] >= EVAL_HORIZON_HOURS):
+                    offenders.append((Path(path).name, record["at_hour"]))
+    assert not offenders, (
+        f"{len(offenders)} execution(s) past hour {EVAL_HORIZON_HOURS} "
+        f"(day {EVAL_HORIZON_HOURS // 24}): {offenders[:5]}"
+    )
+
+
+def test_matrix_has_32_cells_and_both_promise_policies_are_present(tmp_path: Path):
+    results = run_matrix(seeds=[100], out_dir=tmp_path, n_customers=60)
+    assert len(results) == 32
+    assert "r3_noisy_promise/promise_aware" in results
+    assert "r3_noisy_promise/promise_aware_random" in results
+    assert all(cell["compliance_violations"] == 0 for cell in results.values())
+
+
+def test_promises_reach_the_policy_from_parsed_replies(tmp_path: Path, monkeypatch):
+    from encore.policies import PromiseAwarePolicy
+
+    seen: dict = {}
+    real = PromiseAwarePolicy.propose
+
+    def spy(self, failed, state, now_hour):
+        seen.setdefault("promises", dict(self.promises))
+        return real(self, failed, state, now_hour)
+
+    monkeypatch.setattr(PromiseAwarePolicy, "propose", spy)
+    run_matrix(seeds=[100], out_dir=tmp_path, n_customers=200)
+    assert seen["promises"] and all(1 <= d <= 30 for d in seen["promises"].values())

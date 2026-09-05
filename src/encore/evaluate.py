@@ -4,7 +4,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 from encore.audit import AttemptLedger, AuditLog
-from encore.domain import ActionKind, DeclineCode, ProposedAction
+from encore.domain import HOURS_PER_DAY, ActionKind, DeclineCode, ProposedAction
 from encore.model import LearnedPolicy, generate_training_data, train
 from encore.parser import ReplyIntent, parse_keyword
 from encore.policies import (
@@ -12,6 +12,7 @@ from encore.policies import (
     FixedSpread10,
     ImmediateRetry3,
     Policy,
+    PromiseAwarePolicy,
     RandomInHorizon,
 )
 from encore.scheduler import Scheduler, SimulatedRail
@@ -27,6 +28,10 @@ REGIMES: dict[str, RegimeConfig] = {
     "r0_base": RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05),
     "r1_shifted": RegimeConfig([3, 10, 25], [0.2, 0.3, 0.5], 0.15, 0.12),
     "r2_no_signal": RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05, uniform_credits=True),
+    # r1_shifted's world, but customers are wrong about payday by up to 2 days
+    # and 30% name a random day: the honesty guard for promise_aware.
+    "r3_noisy_promise": RegimeConfig([3, 10, 25], [0.2, 0.3, 0.5], 0.15, 0.12,
+                                     promise_error_days=2, false_promise_rate=0.3),
 }
 
 # Training is always and only on these seeds, regime r0_base -- one model,
@@ -40,6 +45,13 @@ EVAL_SEED_FLOOR = 100
 # deterministic because the seed list iterates in a fixed order. Disjoint from
 # the training rng (seed * 7919 in model.generate_training_data).
 RANDOM_BASELINE_SEED = 20260901
+
+# Exclusive upper bound on any proposed retry hour, in hours. run_cycle(30, ...)
+# below simulates exactly 30 days, so balance_history holds day indices 0-29 and
+# a retry at day >= 30 finds no entry -- Portfolio.debit then falls back to the
+# live end-of-simulation balance and the retry succeeds for free. Every policy
+# gets the SAME bound, so the horizon match is preserved. BROKELOG 2026-09-02.
+EVAL_HORIZON_HOURS = 30 * HOURS_PER_DAY
 
 
 def count_violations(records: list[dict]) -> int:
@@ -113,13 +125,27 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
         # both reach as far into the month as LearnedPolicy does, so a win over
         # them cannot be explained by search width alone. See policies.py.
         policies: list[Policy] = [
-            ImmediateRetry3(),
-            FixedSchedule(),
-            FixedSpread10(),
-            RandomInHorizon(random.Random(RANDOM_BASELINE_SEED)),
-            LearnedPolicy(clf),
+            ImmediateRetry3(max_hour=EVAL_HORIZON_HOURS),
+            FixedSchedule(max_hour=EVAL_HORIZON_HOURS),
+            FixedSpread10(max_hour=EVAL_HORIZON_HOURS),
+            RandomInHorizon(random.Random(RANDOM_BASELINE_SEED),
+                            max_hour=EVAL_HORIZON_HOURS),
+            LearnedPolicy(clf, max_hour=EVAL_HORIZON_HOURS),
             LearnedPolicy(clf_nopayday, payday_flag=False,
-                          name="encore_learned_nopayday"),
+                          name="encore_learned_nopayday",
+                          max_hour=EVAL_HORIZON_HOURS),
+            # Deterministic, no model: the day comes from the parsed reply when
+            # there is one, else fixed_spread10's schedule. Compared against
+            # fixed_spread10 (its own fallback) the delta isolates the promise.
+            PromiseAwarePolicy(FixedSpread10(max_hour=EVAL_HORIZON_HOURS),
+                               max_hour=EVAL_HORIZON_HOURS),
+            # Same promise handling, but the fallback is the uniform-random
+            # control -- the strongest no-model policy in the table. Its own
+            # seeded stream, disjoint from random_in_horizon's, so the two rows
+            # are independent draws.
+            PromiseAwarePolicy(RandomInHorizon(random.Random(RANDOM_BASELINE_SEED + 1),
+                                               max_hour=EVAL_HORIZON_HOURS),
+                               max_hour=EVAL_HORIZON_HOURS, name="promise_aware_random"),
         ]
         for policy in policies:
             cell = f"{regime_name}/{policy.name}"
@@ -142,6 +168,15 @@ def run_matrix(seeds: list[int], out_dir: Path, n_customers: int = 500,
                 # BEFORE scheduling, from this seed's own replies only
                 killed = {r.customer_id for r in p.reply_events()
                          if parse_fn(r.text).kind == "cancel"}
+                # promise-to-pay days feed PromiseAwarePolicy the way cancel replies
+                # feed the kill set: parsed once per seed, before scheduling.
+                promises: dict[str, int] = {}
+                for r in p.reply_events():
+                    intent = parse_fn(r.text)
+                    if intent.kind == "promise_to_pay" and intent.promise_day is not None:
+                        promises[r.customer_id] = intent.promise_day
+                if hasattr(policy, "promises"):
+                    policy.promises = promises
 
                 slug = f"{regime_name}__{policy.name}__s{seed}"
                 audit_path = out_dir / f"{slug}_audit.jsonl"

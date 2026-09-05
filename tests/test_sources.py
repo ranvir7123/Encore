@@ -1,0 +1,99 @@
+"""Failure sources: the simulated cycle and real Razorpay failed payments
+must yield the same FailedDebit shape, and anything we cannot classify must
+surface as an exception rather than a guessed retry."""
+from encore.domain import HARD_DECLINES, DeclineCode
+from encore.simulator import Portfolio, RegimeConfig
+from encore.sources import (
+    IST_OFFSET_S,
+    RazorpayFailureSource,
+    SimulatedFailureSource,
+    map_error_reason,
+    sim_hour,
+)
+
+R0 = RegimeConfig([1, 7, 15], [0.6, 0.3, 0.1], 0.08, 0.05)
+ANCHOR = 1788287400  # 2026-09-01 00:00 IST (18:30 UTC on 2026-08-31)
+
+
+class FakeClient:
+    def __init__(self, items):
+        self.items = items
+
+    def list_payments(self, from_ts, to_ts, count=100, skip=0):
+        return self.items
+
+
+def _payment(**over):
+    base = {"id": "pay_1", "status": "failed", "amount": 19900, "created_at": ANCHOR + 14 * 3600,
+            "error_reason": "insufficient_funds", "notes": {"customer_id": "cust_0042"}}
+    base.update(over)
+    return base
+
+
+def test_mapping_is_explicit_and_unknown_is_none():
+    assert map_error_reason("insufficient_funds") is DeclineCode.INSUFFICIENT_FUNDS
+    assert map_error_reason("gateway_technical_error") is DeclineCode.GATEWAY_TIMEOUT
+    # what the insufficient-funds test card really reports (BROKELOG entry 13)
+    assert map_error_reason("payment_failed") is DeclineCode.GENERIC_DECLINE
+    assert DeclineCode.GENERIC_DECLINE not in HARD_DECLINES
+    assert map_error_reason("card_declined") is None
+    assert map_error_reason(None) is None
+
+
+def test_sim_hour_keeps_ist_hour_of_day_and_counts_days_from_anchor():
+    assert sim_hour(ANCHOR, ANCHOR) == 0
+    assert sim_hour(ANCHOR + 14 * 3600, ANCHOR) == 14
+    assert sim_hour(ANCHOR + 2 * 86400 + 23 * 3600, ANCHOR) == 2 * 24 + 23
+    assert IST_OFFSET_S == 19800
+
+
+def test_razorpay_source_yields_failed_debits_with_customer_from_notes():
+    src = RazorpayFailureSource(FakeClient([_payment()]), ANCHOR, ANCHOR + 86400, ANCHOR)
+    [f] = src.failures()
+    assert f.customer_id == "cust_0042" and f.amount_paise == 19900
+    assert f.decline is DeclineCode.INSUFFICIENT_FUNDS and f.at_hour == 14
+    assert f.cycle_id == "1"  # the failed payment's own id, "pay_" stripped
+    assert src.unmapped == []
+
+
+def test_razorpay_source_skips_non_failed_and_parks_unmapped():
+    items = [_payment(status="captured"), _payment(id="pay_2", error_reason="card_declined"),
+             _payment(id="pay_3", notes={})]
+    src = RazorpayFailureSource(FakeClient(items), ANCHOR, ANCHOR + 86400, ANCHOR)
+    fails = src.failures()
+    assert [f.customer_id for f in fails] == ["3"]  # unattributed: named by its payment
+    assert src.unmapped == [{"payment_id": "pay_2", "customer_id": "cust_0042",
+                             "error_reason": "card_declined", "amount_paise": 19900}]
+
+
+def test_attempt_ids_from_real_failures_fit_razorpay_reference_id_limit():
+    """Razorpay reference_id is capped at 40 characters. Real payment ids are
+    18 characters ("pay_" + 14); the worst case is an unattributed failure,
+    whose customer id IS the payment id."""
+    from encore.domain import ActionKind, ProposedAction, attempt_id
+
+    items = [_payment(id="pay_TXCExIcrL6fcrD", notes={}),
+             _payment(id="pay_TXCGLl4N2QOjcv", notes={"customer_id": "cust_0005"})]
+    for f in RazorpayFailureSource(FakeClient(items), ANCHOR, ANCHOR + 86400, ANCHOR).failures():
+        aid = attempt_id(ProposedAction(ActionKind.RETRY, f.customer_id, f.cycle_id,
+                                        f.amount_paise, f.at_hour + 72, 3))
+        assert len(aid) <= 40, aid
+
+
+def test_simulated_source_equals_run_cycle():
+    a = Portfolio.generate(100, R0, seed=7)
+    b = Portfolio.generate(100, R0, seed=7)
+    assert SimulatedFailureSource(a, "c1").failures() == b.run_cycle(30, "c1")
+
+
+def test_capture_watch_returns_only_captured_payments_for_asked_customers():
+    from encore.sources import RazorpayCaptureWatch
+
+    items = [_payment(id="pay_a", status="captured", notes={"customer_id": "cust_0098"}),
+             _payment(id="pay_b", status="failed", notes={"customer_id": "cust_0098"}),
+             _payment(id="pay_c", status="captured", notes={"customer_id": "cust_0001"}),
+             _payment(id="pay_d", status="captured", notes={})]
+    watch = RazorpayCaptureWatch(FakeClient(items), ANCHOR)
+    assert watch.captured({"cust_0098", "cust_0042"}, ANCHOR + 3600) == {
+        "cust_0098": {"payment_id": "pay_a", "amount_paise": 19900,
+                      "created_at": ANCHOR + 14 * 3600}}

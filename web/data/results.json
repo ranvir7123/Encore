@@ -1,0 +1,651 @@
+{
+  "regimes": [
+    "r0_base",
+    "r1_shifted",
+    "r2_no_signal",
+    "r3_noisy_promise"
+  ],
+  "policies": [
+    "immediate_x3",
+    "fixed_t123",
+    "fixed_spread10",
+    "random_in_horizon",
+    "encore_learned",
+    "encore_learned_nopayday",
+    "promise_aware",
+    "promise_aware_random"
+  ],
+  "live_policies": [
+    "immediate_x3",
+    "fixed_t123",
+    "fixed_spread10",
+    "random_in_horizon"
+  ],
+  "precomputed_policies": [
+    "encore_learned",
+    "encore_learned_nopayday",
+    "promise_aware",
+    "promise_aware_random"
+  ],
+  "industry_baseline": "fixed_t123",
+  "cells": {
+    "r0_base/immediate_x3": {
+      "regime": "r0_base",
+      "policy": "immediate_x3",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 0,
+      "recovered_per_1000_display": "₹0.00",
+      "recovery_per_attempt_paise": 0,
+      "recovery_per_attempt_display": "₹0.00",
+      "max_contacts_per_customer": 0,
+      "parked_paise": 4141700,
+      "parked_display": "₹41,417.00",
+      "denials_by_reason": {
+        "hard_decline_terminal": 110,
+        "outside_execution_window": 83,
+        "cooldown_active": 166,
+        "sequence_killed": 27
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 0.0
+    },
+    "r0_base/fixed_t123": {
+      "regime": "r0_base",
+      "policy": "fixed_t123",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 6804091,
+      "recovered_per_1000_display": "₹68,040.91",
+      "recovery_per_attempt_paise": 7061,
+      "recovery_per_attempt_display": "₹70.61",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 2804500,
+      "parked_display": "₹28,045.00",
+      "denials_by_reason": {
+        "hard_decline_terminal": 108,
+        "sequence_killed": 26
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 1.0
+    },
+    "r0_base/fixed_spread10": {
+      "regime": "r0_base",
+      "policy": "fixed_spread10",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 16558182,
+      "recovered_per_1000_display": "₹1,65,581.82",
+      "recovery_per_attempt_paise": 24125,
+      "recovery_per_attempt_display": "₹241.25",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 1098000,
+      "parked_display": "₹10,980.00",
+      "denials_by_reason": {
+        "hard_decline_terminal": 102,
+        "sequence_killed": 26
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.433562690446086
+    },
+    "r0_base/random_in_horizon": {
+      "regime": "r0_base",
+      "policy": "random_in_horizon",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 18690000,
+      "recovered_per_1000_display": "₹1,86,900.00",
+      "recovery_per_attempt_paise": 34265,
+      "recovery_per_attempt_display": "₹342.65",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 29900,
+      "parked_display": "₹299.00",
+      "denials_by_reason": {
+        "hard_decline_terminal": 110,
+        "sequence_killed": 27
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.746876842182152
+    },
+    "r0_base/encore_learned": {
+      "regime": "r0_base",
+      "policy": "encore_learned",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 18825909,
+      "recovered_per_1000_display": "₹1,88,259.09",
+      "recovery_per_attempt_paise": 42698,
+      "recovery_per_attempt_display": "₹426.98",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 0,
+      "parked_display": "₹0.00",
+      "denials_by_reason": {
+        "hard_decline_terminal": 110,
+        "sequence_killed": 27
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.766851442757012
+    },
+    "r0_base/encore_learned_nopayday": {
+      "regime": "r0_base",
+      "policy": "encore_learned_nopayday",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 18825909,
+      "recovered_per_1000_display": "₹1,88,259.09",
+      "recovery_per_attempt_paise": 43597,
+      "recovery_per_attempt_display": "₹435.97",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 0,
+      "parked_display": "₹0.00",
+      "denials_by_reason": {
+        "hard_decline_terminal": 110,
+        "sequence_killed": 27
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.766851442757012
+    },
+    "r0_base/promise_aware": {
+      "regime": "r0_base",
+      "policy": "promise_aware",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 16558182,
+      "recovered_per_1000_display": "₹1,65,581.82",
+      "recovery_per_attempt_paise": 25474,
+      "recovery_per_attempt_display": "₹254.74",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 1098000,
+      "parked_display": "₹10,980.00",
+      "denials_by_reason": {
+        "hard_decline_terminal": 102,
+        "sequence_killed": 26
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.433562690446086
+    },
+    "r0_base/promise_aware_random": {
+      "regime": "r0_base",
+      "policy": "promise_aware_random",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 18145000,
+      "recovered_per_1000_display": "₹1,81,450.00",
+      "recovery_per_attempt_paise": 35963,
+      "recovery_per_attempt_display": "₹359.63",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 149800,
+      "parked_display": "₹1,498.00",
+      "denials_by_reason": {
+        "hard_decline_terminal": 110,
+        "sequence_killed": 27
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.666777972252282
+    },
+    "r1_shifted/immediate_x3": {
+      "regime": "r1_shifted",
+      "policy": "immediate_x3",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 0,
+      "recovered_per_1000_display": "₹0.00",
+      "recovery_per_attempt_paise": 0,
+      "recovery_per_attempt_display": "₹0.00",
+      "max_contacts_per_customer": 0,
+      "parked_paise": 20734100,
+      "parked_display": "₹2,07,341.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "outside_execution_window": 459,
+        "cooldown_active": 918,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 0.0
+    },
+    "r1_shifted/fixed_t123": {
+      "regime": "r1_shifted",
+      "policy": "fixed_t123",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 5277463,
+      "recovered_per_1000_display": "₹52,774.63",
+      "recovery_per_attempt_paise": 3101,
+      "recovery_per_attempt_display": "₹31.01",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 17262600,
+      "parked_display": "₹1,72,626.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 176
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 1.0
+    },
+    "r1_shifted/fixed_spread10": {
+      "regime": "r1_shifted",
+      "policy": "fixed_spread10",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 14300135,
+      "recovered_per_1000_display": "₹1,43,001.35",
+      "recovery_per_attempt_paise": 9633,
+      "recovery_per_attempt_display": "₹96.33",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 11175200,
+      "parked_display": "₹1,11,752.00",
+      "denials_by_reason": {
+        "sequence_killed": 95,
+        "hard_decline_terminal": 162
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.709660873036912
+    },
+    "r1_shifted/random_in_horizon": {
+      "regime": "r1_shifted",
+      "policy": "random_in_horizon",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 21894872,
+      "recovered_per_1000_display": "₹2,18,948.72",
+      "recovery_per_attempt_paise": 16538,
+      "recovery_per_attempt_display": "₹165.38",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 4510000,
+      "parked_display": "₹45,100.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 4.148749503312482
+    },
+    "r1_shifted/encore_learned": {
+      "regime": "r1_shifted",
+      "policy": "encore_learned",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 15029150,
+      "recovered_per_1000_display": "₹1,50,291.50",
+      "recovery_per_attempt_paise": 10467,
+      "recovery_per_attempt_display": "₹104.67",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 9597500,
+      "parked_display": "₹95,975.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.8477982697368036
+    },
+    "r1_shifted/encore_learned_nopayday": {
+      "regime": "r1_shifted",
+      "policy": "encore_learned_nopayday",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 15486775,
+      "recovered_per_1000_display": "₹1,54,867.75",
+      "recovery_per_attempt_paise": 11120,
+      "recovery_per_attempt_display": "₹111.20",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 9258400,
+      "parked_display": "₹92,584.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.9345113362234847
+    },
+    "r1_shifted/promise_aware": {
+      "regime": "r1_shifted",
+      "policy": "promise_aware",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 15835088,
+      "recovered_per_1000_display": "₹1,58,350.88",
+      "recovery_per_attempt_paise": 11515,
+      "recovery_per_attempt_display": "₹115.15",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 10037800,
+      "parked_display": "₹1,00,378.00",
+      "denials_by_reason": {
+        "sequence_killed": 95,
+        "hard_decline_terminal": 162
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 3.0005114199758482
+    },
+    "r1_shifted/promise_aware_random": {
+      "regime": "r1_shifted",
+      "policy": "promise_aware_random",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 23067341,
+      "recovered_per_1000_display": "₹2,30,673.41",
+      "recovery_per_attempt_paise": 19184,
+      "recovery_per_attempt_display": "₹191.84",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 3641200,
+      "parked_display": "₹36,412.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 4.370914774769619
+    },
+    "r2_no_signal/immediate_x3": {
+      "regime": "r2_no_signal",
+      "policy": "immediate_x3",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 0,
+      "recovered_per_1000_display": "₹0.00",
+      "recovery_per_attempt_paise": 0,
+      "recovery_per_attempt_display": "₹0.00",
+      "max_contacts_per_customer": 0,
+      "parked_paise": 26344400,
+      "parked_display": "₹2,63,444.00",
+      "denials_by_reason": {
+        "outside_execution_window": 556,
+        "cooldown_active": 1112,
+        "sequence_killed": 100,
+        "hard_decline_terminal": 104
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 0.0
+    },
+    "r2_no_signal/fixed_t123": {
+      "regime": "r2_no_signal",
+      "policy": "fixed_t123",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 3400526,
+      "recovered_per_1000_display": "₹34,005.26",
+      "recovery_per_attempt_paise": 1673,
+      "recovery_per_attempt_display": "₹16.73",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 23989500,
+      "parked_display": "₹2,39,895.00",
+      "denials_by_reason": {
+        "sequence_killed": 99,
+        "hard_decline_terminal": 100
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 1.0
+    },
+    "r2_no_signal/fixed_spread10": {
+      "regime": "r2_no_signal",
+      "policy": "fixed_spread10",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 7891579,
+      "recovered_per_1000_display": "₹78,915.79",
+      "recovery_per_attempt_paise": 4614,
+      "recovery_per_attempt_display": "₹46.14",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 21155100,
+      "parked_display": "₹2,11,551.00",
+      "denials_by_reason": {
+        "sequence_killed": 93,
+        "hard_decline_terminal": 94
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.320693622104345
+    },
+    "r2_no_signal/random_in_horizon": {
+      "regime": "r2_no_signal",
+      "policy": "random_in_horizon",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 11725921,
+      "recovered_per_1000_display": "₹1,17,259.21",
+      "recovery_per_attempt_paise": 6792,
+      "recovery_per_attempt_display": "₹67.92",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 17432700,
+      "parked_display": "₹1,74,327.00",
+      "denials_by_reason": {
+        "sequence_killed": 100,
+        "hard_decline_terminal": 104
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 3.4482668269555945
+    },
+    "r2_no_signal/encore_learned": {
+      "regime": "r2_no_signal",
+      "policy": "encore_learned",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 10767763,
+      "recovered_per_1000_display": "₹1,07,677.63",
+      "recovery_per_attempt_paise": 6223,
+      "recovery_per_attempt_display": "₹62.23",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 18160900,
+      "parked_display": "₹1,81,609.00",
+      "denials_by_reason": {
+        "sequence_killed": 100,
+        "hard_decline_terminal": 104
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 3.166499241587919
+    },
+    "r2_no_signal/encore_learned_nopayday": {
+      "regime": "r2_no_signal",
+      "policy": "encore_learned_nopayday",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 10741184,
+      "recovered_per_1000_display": "₹1,07,411.84",
+      "recovery_per_attempt_paise": 6275,
+      "recovery_per_attempt_display": "₹62.75",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 18181100,
+      "parked_display": "₹1,81,811.00",
+      "denials_by_reason": {
+        "sequence_killed": 100,
+        "hard_decline_terminal": 104
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 3.1586830978501563
+    },
+    "r2_no_signal/promise_aware": {
+      "regime": "r2_no_signal",
+      "policy": "promise_aware",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 7891579,
+      "recovered_per_1000_display": "₹78,915.79",
+      "recovery_per_attempt_paise": 4614,
+      "recovery_per_attempt_display": "₹46.14",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 21155100,
+      "parked_display": "₹2,11,551.00",
+      "denials_by_reason": {
+        "sequence_killed": 93,
+        "hard_decline_terminal": 94
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.320693622104345
+    },
+    "r2_no_signal/promise_aware_random": {
+      "regime": "r2_no_signal",
+      "policy": "promise_aware_random",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 11489474,
+      "recovered_per_1000_display": "₹1,14,894.74",
+      "recovery_per_attempt_paise": 6691,
+      "recovery_per_attempt_display": "₹66.91",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 17612400,
+      "parked_display": "₹1,76,124.00",
+      "denials_by_reason": {
+        "sequence_killed": 100,
+        "hard_decline_terminal": 104
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 3.3787343487448704
+    },
+    "r3_noisy_promise/immediate_x3": {
+      "regime": "r3_noisy_promise",
+      "policy": "immediate_x3",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 0,
+      "recovered_per_1000_display": "₹0.00",
+      "recovery_per_attempt_paise": 0,
+      "recovery_per_attempt_display": "₹0.00",
+      "max_contacts_per_customer": 0,
+      "parked_paise": 20734100,
+      "parked_display": "₹2,07,341.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "outside_execution_window": 459,
+        "cooldown_active": 918,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 0.0
+    },
+    "r3_noisy_promise/fixed_t123": {
+      "regime": "r3_noisy_promise",
+      "policy": "fixed_t123",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 5277463,
+      "recovered_per_1000_display": "₹52,774.63",
+      "recovery_per_attempt_paise": 3101,
+      "recovery_per_attempt_display": "₹31.01",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 17262600,
+      "parked_display": "₹1,72,626.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 176
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 1.0
+    },
+    "r3_noisy_promise/fixed_spread10": {
+      "regime": "r3_noisy_promise",
+      "policy": "fixed_spread10",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 14300135,
+      "recovered_per_1000_display": "₹1,43,001.35",
+      "recovery_per_attempt_paise": 9633,
+      "recovery_per_attempt_display": "₹96.33",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 11175200,
+      "parked_display": "₹1,11,752.00",
+      "denials_by_reason": {
+        "sequence_killed": 95,
+        "hard_decline_terminal": 162
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.709660873036912
+    },
+    "r3_noisy_promise/random_in_horizon": {
+      "regime": "r3_noisy_promise",
+      "policy": "random_in_horizon",
+      "tier": "live",
+      "recovered_per_1000_failures_paise": 21894872,
+      "recovered_per_1000_display": "₹2,18,948.72",
+      "recovery_per_attempt_paise": 16538,
+      "recovery_per_attempt_display": "₹165.38",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 4510000,
+      "parked_display": "₹45,100.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 4.148749503312482
+    },
+    "r3_noisy_promise/encore_learned": {
+      "regime": "r3_noisy_promise",
+      "policy": "encore_learned",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 15029150,
+      "recovered_per_1000_display": "₹1,50,291.50",
+      "recovery_per_attempt_paise": 10467,
+      "recovery_per_attempt_display": "₹104.67",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 9597500,
+      "parked_display": "₹95,975.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.8477982697368036
+    },
+    "r3_noisy_promise/encore_learned_nopayday": {
+      "regime": "r3_noisy_promise",
+      "policy": "encore_learned_nopayday",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 15486775,
+      "recovered_per_1000_display": "₹1,54,867.75",
+      "recovery_per_attempt_paise": 11120,
+      "recovery_per_attempt_display": "₹111.20",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 9258400,
+      "parked_display": "₹92,584.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.9345113362234847
+    },
+    "r3_noisy_promise/promise_aware": {
+      "regime": "r3_noisy_promise",
+      "policy": "promise_aware",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 15565722,
+      "recovered_per_1000_display": "₹1,55,657.22",
+      "recovery_per_attempt_paise": 10954,
+      "recovery_per_attempt_display": "₹109.54",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 10237400,
+      "parked_display": "₹1,02,374.00",
+      "denials_by_reason": {
+        "sequence_killed": 95,
+        "hard_decline_terminal": 162
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 2.9494706073732777
+    },
+    "r3_noisy_promise/promise_aware_random": {
+      "regime": "r3_noisy_promise",
+      "policy": "promise_aware_random",
+      "tier": "precomputed",
+      "recovered_per_1000_failures_paise": 23174494,
+      "recovered_per_1000_display": "₹2,31,744.94",
+      "recovery_per_attempt_paise": 18788,
+      "recovery_per_attempt_display": "₹187.88",
+      "max_contacts_per_customer": 3,
+      "parked_paise": 3561800,
+      "parked_display": "₹35,618.00",
+      "denials_by_reason": {
+        "sequence_killed": 97,
+        "hard_decline_terminal": 185
+      },
+      "compliance_violations": 0,
+      "over_fixed_t123": 4.391218659420256
+    }
+  },
+  "headline": {
+    "r0_base": {
+      "learned_over_fixed_t123": 2.766851442757012,
+      "random_over_learned": 0.9927807470013799
+    },
+    "r1_shifted": {
+      "learned_over_fixed_t123": 2.8477982697368036,
+      "random_over_learned": 1.4568270327995927
+    },
+    "r2_no_signal": {
+      "learned_over_fixed_t123": 3.166499241587919,
+      "random_over_learned": 1.0889839421614314
+    },
+    "r3_noisy_promise": {
+      "learned_over_fixed_t123": 2.8477982697368036,
+      "random_over_learned": 1.4568270327995927
+    }
+  },
+  "totals": {
+    "cells": 32,
+    "compliance_violations": 0,
+    "parked_paise": 345906900
+  },
+  "provenance": {
+    "seeds": [
+      100,
+      101,
+      102
+    ],
+    "customers": 500,
+    "command": "uv run encore eval --seeds 100,101,102 --customers 500",
+    "horizon_hours": 720,
+    "horizon_days": 30
+  }
+}

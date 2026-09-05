@@ -387,3 +387,131 @@ Resulting `runs/demo_audit.jsonl`, verbatim (4 lines):
   demo-worthy proof of idempotency (as this run did for `[1]`/`[2]`), or (b)
   pass a higher `--n` so it reaches past the already-consumed reference_ids
   into fresh soft-decline failures instead of re-colliding with them.
+
+## A0 spike — failed-payment detection through the Payments API (2026-09-02)
+
+Question: can a FAILED test-mode attempt be detected programmatically, with a
+reason, and does a Payment Link's `notes.customer_id` reach the payment?
+Script: `scripts/spike_failed_payments.py` (`create` / `list`).
+
+First link (`plink_TX8I88IJxQ3hq5`, notes `{"customer_id": "cust_spike",
+"cycle_id": "spike"}`) was paid successfully by the operator by mistake --
+which still answered the notes question. Verbatim `list` output:
+
+```
+payments in window: 1
+{"id": "pay_TX8RaULODLixB9", "status": "captured", "amount": 19900, "method": "card", "order_id": "order_TX8QOOjvBqq5W6", "created_at": 1788344874, "error_code": null, "error_description": null, "error_source": null, "error_step": null, "error_reason": null, "notes": {"cycle_id": "spike", "customer_id": "cust_spike"}, "description": "#TX8I88IJxQ3hq5"}
+```
+
+Second link (`plink_TX8TUTJx4sCmkX`) and the two `encore seed-live` originals
+were failed on checkout with the documented insufficient-funds test card
+`4100 2800 0008 0001`. Verbatim `list` output:
+
+```
+payments in window: 3
+{"id": "pay_TXCHLEzZwfcdOY", "status": "failed", "amount": 99900, "method": "card", "order_id": "order_TXCGgUGCz4B3lK", "created_at": 1788358378, "error_code": "BAD_REQUEST_ERROR", "error_description": "Payment failed", "error_source": "gateway", "error_step": "payment_authorization", "error_reason": "payment_failed", "notes": {"kind": "original", "cycle_id": "live", "customer_id": "cust_0030"}, "description": "#TX8vAnO2Xx6zTv"}
+{"id": "pay_TXCGLl4N2QOjcv", "status": "failed", "amount": 99900, "method": "card", "order_id": "order_TXCFg3iP9Ei8r6", "created_at": 1788358322, "error_code": "BAD_REQUEST_ERROR", "error_description": "Payment failed", "error_source": "gateway", "error_step": "payment_authorization", "error_reason": "payment_failed", "notes": {"kind": "original", "cycle_id": "live", "customer_id": "cust_0005"}, "description": "#TX8v9sXKb4xC1e"}
+{"id": "pay_TXCExIcrL6fcrD", "status": "failed", "amount": 19900, "method": "card", "order_id": "order_TXCEIgRCesxblI", "created_at": 1788358243, "error_code": "BAD_REQUEST_ERROR", "error_description": "Payment failed", "error_source": "gateway", "error_step": "payment_authorization", "error_reason": "payment_failed", "notes": {"cycle_id": "spike", "customer_id": "cust_spike"}, "description": "#TX8TUTJx4sCmkX"}
+```
+
+Findings:
+
+1. **Failed attempts DO appear in `GET /v1/payments`** with `status: "failed"`
+   and error fields, the surface the Payment Link's own `payments[]` never
+   shows (it lists captured payments only). Detection needs no webhook.
+2. **Notes propagate** from the Payment Link to the payment entity, intact.
+   That is how a real failure is correlated back to a customer.
+3. **The documented insufficient-funds card does not report
+   `insufficient_funds`.** All three declines came back as the generic
+   `error_reason: "payment_failed"`, `error_source: "gateway"`, `error_step:
+   "payment_authorization"`. BROKELOG entry 13; `sources.py` maps that string
+   to the retryable `DeclineCode.GENERIC_DECLINE`.
+
+## Live rehearsal, take 1 (2026-09-02, ~19:47 IST)
+
+```
+rm -f runs/agent_ledger.txt runs/agent_audit.jsonl runs/board.html
+PYTHONUNBUFFERED=1 uv run encore agent --live 3 --batch 50 --speed 6 --timeout 240 --interval 5
+```
+
+Verbatim transcript:
+
+```
+Payments API: 3 mapped failure(s), 0 unmapped, in the last 180 min.
+=== Encore recovery agent ===
+seed 100 | regime r1_shifted | 50 simulated + 3 live on Razorpay test mode | policy promise_aware_random | 6.0 sim-hours per second | live
+board: runs\board.html
+
+  LINK for cust_0030 INR 999.00: https://rzp.io/rzp/axKqebU  (plink_TXCMK5peBCA4t5)
+  LINK for cust_0005 INR 999.00: https://rzp.io/rzp/fUMEFUGD  (plink_TXCMST6ys8Yfga)
+  LINK for cust_spike INR 199.00: https://rzp.io/rzp/4UZ06Sh  (plink_TXCMXbSeoFGj3F)
+
+at risk     INR 28,047.00
+recovered   INR 9,984.00  (35.6%)
+attempts 87  denied 17  nudges 53  duplicates_blocked 0
+parked: hard_decline_terminal=14, policy_stop=20, sequence_killed=3
+audit: runs\agent_audit.jsonl  ledger: runs\agent_ledger.txt  board: runs\board.html
+```
+
+Audit counts: 200 decisions, 53 nudges, 10 replies (6 cancel, 4 promise),
+87 executions (16 successes, all on the simulated rail), 37 parks, 3 links.
+The operator paid `plink_TXCMST6ys8Yfga`; Razorpay captured
+`pay_TXCQdLbRfAi7lW` at 19:52:00, 252 s after the link was created at
+19:47:48 -- 12 s after the agent's 240 s timeout had already recorded
+`no_terminal_status_within_timeout`. Every rupee on the board came from the
+simulator. BROKELOG entry 14: the timeout was sized for software, and the
+live `cycle_id` would have made a second take's reference_ids collide.
+Kept under `runs/take1/`.
+
+## Live rehearsal, take 2 (2026-09-02, ~20:53 IST)
+
+`encore agent --live 1 --batch 50 --speed 6 --timeout 600 --interval 5
+--window-s 1200`, after the timeout and cycle-id fixes (BROKELOG entry 14).
+Detection: `Payments API: 1 mapped failure(s), 0 unmapped, in the last 20
+min.` Recovery link `plink_TXDTTeY7Q8yapK` printed with `pay by 21:03:07`.
+The operator paid the ORIGINAL link instead (`pay_TXDV9saQEzX5yb`, captured
+20:54:44); the recovery link stayed `created` and timed out at 21:03:07.
+Batch: INR 9,486.00 of INR 27,349.00 (34.7%). BROKELOG entry 15; kept under
+`runs/take2/`.
+
+## Live rehearsal, take 3 (2026-09-02, ~21:25 IST) -- the one that landed
+
+After the self-cure watch and the "FAIL THIS ONE" / "PAY THIS ONE" checkout
+titles (commit d884508). Original: `encore seed-live --n 1 --seed 102` ->
+cust_0055, INR 999.00, `https://rzp.io/rzp/FnKdtut5`, failed on checkout with
+the insufficient-funds card (reported as `payment_failed`, as in entry 13).
+
+```
+rm -f runs/agent_ledger.txt runs/agent_audit.jsonl runs/board.html
+PYTHONUNBUFFERED=1 uv run encore agent --live 1 --batch 50 --speed 6 --timeout 600 --interval 5 --window-s 1200
+```
+
+Verbatim transcript:
+
+```
+Payments API: 1 mapped failure(s), 0 unmapped, in the last 20 min.
+=== Encore recovery agent ===
+seed 100 | regime r1_shifted | 50 simulated + 1 live on Razorpay test mode | policy promise_aware_random | 6.0 sim-hours per second | live
+board: runs\board.html
+
+  LINK for cust_0055 INR 999.00: https://rzp.io/rzp/aAabolSJ  (plink_TXE1mRxcuLVWJS)  pay by 21:35:35
+
+at risk     INR 28,049.00
+recovered   INR 10,485.00  (37.4%)
+attempts 87  denied 17  nudges 51  duplicates_blocked 0  paid_on_their_own 0
+parked: hard_decline_terminal=13, policy_stop=19, sequence_killed=4
+audit: runs\agent_audit.jsonl  ledger: runs\agent_ledger.txt  board: runs\board.html
+```
+
+The operator paid the recovery link on the Netbanking mock bank within the
+window. The two real-rail audit records, verbatim:
+
+```json
+{"event": "link_created", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "at_hour": 51, "amount_paise": 99900, "rail": "razorpay_test_mode", "link_id": "plink_TXE1mRxcuLVWJS", "short_url": "https://rzp.io/rzp/aAabolSJ", "status": "created"}
+{"event": "execution", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "at_hour": 51, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "generic_decline", "attempt_no": 1, "rail": "razorpay_test_mode", "link_id": "plink_TXE1mRxcuLVWJS", "short_url": "https://rzp.io/rzp/aAabolSJ", "status": "paid"}
+```
+
+Audit counts: 199 decisions, 51 nudges, 12 replies (7 cancel, 5 promise),
+87 executions (15 successes: 14 simulated, 1 real), 36 parks, 1 link. The
+final board, transcript and full audit log are committed under
+`docs/evidence/`. Kept under `runs/take3/`.

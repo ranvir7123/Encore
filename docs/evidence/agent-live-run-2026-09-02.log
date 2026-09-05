@@ -1,0 +1,13 @@
+Payments API: 1 mapped failure(s), 0 unmapped, in the last 20 min.
+=== Encore recovery agent ===
+seed 100 | regime r1_shifted | 50 simulated + 1 live on Razorpay test mode | policy promise_aware_random | 6.0 sim-hours per second | live
+board: runs\board.html
+
+  LINK for cust_0055 INR 999.00: https://rzp.io/rzp/aAabolSJ  (plink_TXE1mRxcuLVWJS)  pay by 21:35:35
+
+at risk     INR 28,049.00
+recovered   INR 10,485.00  (37.4%)
+attempts 87  denied 17  nudges 51  duplicates_blocked 0  paid_on_their_own 0
+parked: hard_decline_terminal=13, policy_stop=19, sequence_killed=4
+audit: runs\agent_audit.jsonl  ledger: runs\agent_ledger.txt  board: runs\board.html
+AGENT_EXIT=0

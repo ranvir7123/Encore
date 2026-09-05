@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Encore — Retry Sequencing Lab Report</title>
+<meta name="description" content="A failed-debit retry sequencer for Indian subscription payments. A pure-function compliance wall you can try to break in your browser, and the control experiment that refuted our own machine-learning claim.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<nav class="topnav" aria-label="Primary">
+  <span class="wordmark">Encore</span>
+  <div class="topnav-links">
+    <a href="#abstract">Abstract</a>
+    <a href="#method">Method</a>
+    <a href="#results" aria-current="true">Results</a>
+    <a href="#discussion">Discussion</a>
+  </div>
+  <div class="topnav-tools">
+    <a href="https://github.com/ranvir7123/Encore" aria-label="Source repository on GitHub">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+    </a>
+    <a href="https://github.com/ranvir7123/Encore/blob/main/BROKELOG.md" aria-label="Broke-log">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+    </a>
+  </div>
+</nav>
+
+<!-- Live decision ticker. Populated by the real wall.decide() once Pyodide is
+     up; until then it states plainly that it is waiting, rather than showing
+     invented traffic. -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="ticker-track">
+    <span class="ticker-empty">Loading the compliance wall — decisions will stream here as wall.decide() runs in your browser.</span>
+  </div>
+</div>
+
+<aside class="toc" aria-label="Contents">
+  <div class="toc-head">
+    <div class="toc-title">Contents</div>
+    <div class="label-caps">Evidence build · {{CELLS}} cells</div>
+  </div>
+  <nav class="toc-links">
+    <a href="#abstract">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>
+      <span>Abstract</span>
+    </a>
+    <a href="#method">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M9 3v6l-5 9a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3l-5-9V3"/><path d="M8 3h8"/></svg>
+      <span>Method</span>
+    </a>
+    <a href="#results" aria-current="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      <span>Results</span>
+    </a>
+    <a href="#engine">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+      <span>Engine log</span>
+    </a>
+    <a href="#discussion">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span>Discussion</span>
+    </a>
+  </nav>
+</aside>
+
+<main class="shell" id="main">
+  <div class="measure">
+
+    <!-- ================= ABSTRACT / HERO ================= -->
+    <section id="abstract">
+      <p class="label-caps">Failed-debit retry sequencing · UPI AutoPay &amp; eNACH</p>
+      <h1>Every retry has to get past a wall that cannot be argued with.</h1>
+      <p class="lede hero-lede">
+        Encore decides <em>when</em> to retry a failed subscription debit. It never decides
+        <em>whether</em> one is allowed. That belongs to a pure function with no network,
+        no clock and no model behind it — and below, it is running in your browser on the
+        same <code>wall.py</code> the test suite exercises.
+      </p>
+
+      <div class="wall-panel" id="wall-stage">
+        <div class="wall-head">
+          <span class="wall-badge" id="wall-tier">Wall · loading</span>
+          <span class="wall-stats">
+            <span class="stat-allowed">allowed <b id="wall-allowed">0</b></span>
+            <span class="stat-denied">denied <b id="wall-denied">0</b></span>
+            <span id="wall-engine">engine <b>starting…</b></span>
+          </span>
+        </div>
+        <div class="wall-line" aria-hidden="true"></div>
+        <div class="wall-line-label" aria-hidden="true">wall.decide()</div>
+        <div class="wall-vignette" aria-hidden="true"></div>
+      </div>
+      <p class="wall-caption">
+        <span id="wall-caption-text">Proposals enter from the left. The wall lets them through, or sends them back with a reason code.</span>
+      </p>
+    </section>
+
+    <hr class="rule">
+
+    <!-- ================= RESULTS / FIGURES ================= -->
+    <section id="results">
+      <p class="label-caps">Results · {{CELLS}} regime-by-policy cells</p>
+      <h2>What the matrix says</h2>
+      {{HEADLINE_FIGURES}}
+    </section>
+
+    <!-- ================= DISCUSSION: THE HONEST PART ================= -->
+    <section id="discussion">
+      <p class="label-caps">Read this before you quote a number</p>
+      <h2>We ran the control that could kill our own headline. It killed part of it.</h2>
+      <p>
+        The interesting claim was that a trained model learned <em>when customers have
+        money</em>. So we built <code>random_in_horizon</code>: a policy that picks its retry
+        hour uniformly at random from the identical candidate set the model ranks, starting
+        from the identical cooldown-aware hour. The only difference between them is whether
+        the ranking is a model or a coin.
+      </p>
+      <p>
+        On held-out data the coin wins by <strong class="num">{{RANDOM_MARGIN}}</strong>.
+        It is not brute force — it recovered more using fewer attempts. A heuristic with no
+        model at all (<code>fixed_spread10</code>: retry at T+3, T+6, T+9) gets most of the
+        way there too, so most of our headline was available with no learning in it.
+      </p>
+      <ul class="claims">
+        <li>
+          <span class="tag tag-holds">Holds</span>
+          <span>Beats the industry-standard T+1/T+2/T+3 schedule
+            <strong class="num">{{LEARNED_RATIO}}</strong>, with
+            <strong class="num">{{VIOLATIONS}}</strong> compliance violations across all
+            <strong class="num">{{CELLS}}</strong> cells.</span>
+        </li>
+        <li>
+          <span class="tag tag-dead">Does not hold</span>
+          <span>That the model learned when customers have money. On the held-out regime a
+            uniform draw over the same hours beats it.</span>
+        </li>
+      </ul>
+      <p class="note">
+        <strong>Our first explanation was wrong too.</strong> We blamed a hardcoded
+        near-payday flag in the feature vector, removed it, and retrained. The de-biased
+        model gained 3% and still lost. The real cause is below, and it is a measurement
+        problem rather than a modelling one.
+      </p>
+    </section>
+
+    <hr class="rule">
+
+    <!-- ================= METHOD: THE CLIFF ================= -->
+    <section id="method">
+      <p class="label-caps">Method · regime r1_shifted, held out from training</p>
+      <h2>The model is not ignoring payday. It is two days early.</h2>
+      <p>
+        In this regime success is not a gradient — it is a step. Before day 25 a retry
+        recovers almost nothing; from day 25 it recovers essentially everything, because
+        salary has landed and the balance clears. Both policies face the same step. All that
+        matters is how many of a capped three retries per customer land on the far side.
+      </p>
+      <p>
+        The model puts <strong class="num">{{LEARNED_BEFORE}}</strong> retries on days
+        21&ndash;24, immediately <em>before</em> the cliff, and only
+        <strong class="num">{{LEARNED_AFTER}}</strong> past it. The uniform control lands
+        <strong class="num">{{RANDOM_AFTER}}</strong> past it. That gap is the whole result.
+        A confident near-miss spends a capped budget on days that are reliably empty; a
+        uniform draw at least samples the far side.
+      </p>
+
+      <figure class="chart-frame" style="margin:0">
+        {{CLIFF_SVG}}
+      </figure>
+      <ul class="legend">
+        <li><span class="swatch swatch-learned"></span> encore_learned — retries per day</li>
+        <li><span class="swatch swatch-random"></span> random_in_horizon — retries per day</li>
+        <li><span class="swatch swatch-rate"></span> success rate that day (both pooled)</li>
+      </ul>
+      <p class="readout" id="cliff-readout">Hover or focus a bar for that day's exact counts.</p>
+      {{CLIFF_PROVENANCE}}
+
+      <details class="data-details">
+        <summary>Show the same numbers as a table</summary>
+        <div class="table-scroll">
+          {{CLIFF_TABLE}}
+        </div>
+      </details>
+
+      <p class="note">
+        <strong>Disclosed limitation.</strong> The sharpness of this step is a simulator
+        artifact. <code>Portfolio.debit</code> succeeds deterministically once the balance
+        clears, so post-payday success is exactly 100% and pre-payday near zero. Real
+        balances do not behave like this. The direction of the finding is sound; the
+        magnitude is flattered by the simulator.
+      </p>
+    </section>
+
+    <hr class="rule">
+
+    <!-- ================= ENGINE LOG ================= -->
+    <section id="engine">
+      <p class="label-caps">Live policy engine</p>
+      <h2>The wall, deciding, in this tab</h2>
+      <p>
+        Every line below is a real <code>Decision</code> returned by <code>wall.decide()</code>
+        running under Pyodide on the repository's own source. Nothing here is scripted; the
+        reason codes are whatever the wall actually returns.
+      </p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-lights" aria-hidden="true">
+            <span class="l-red"></span><span class="l-amber"></span><span class="l-green"></span>
+          </div>
+          <span class="terminal-path">encore/wall.py — decide()</span>
+        </div>
+        <div class="terminal-body" id="terminal-body" role="log" aria-live="off" aria-label="Live compliance wall decisions">
+          <div class="terminal-line is-info"><span class="tag">[INFO]</span><span>Waiting for the Python runtime…</span></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-note">Encore · buildathon evidence build</div>
+    <div class="footer-links">
+      <a href="https://github.com/ranvir7123/Encore">Repository</a>
+      <a href="https://github.com/ranvir7123/Encore/blob/main/BROKELOG.md">Broke-log</a>
+      <a href="https://github.com/ranvir7123/Encore/blob/main/README.md">README</a>
+    </div>
+  </div>
+</footer>
+
+<script src="app.js" defer></script>
+</body>
+</html>

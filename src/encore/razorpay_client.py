@@ -15,17 +15,26 @@ TERMINAL_STATUSES = {"paid", "cancelled", "expired"}
 
 
 class RazorpayClient:
-    def __init__(self) -> None:
+    def __init__(self, transport: httpx.BaseTransport | None = None) -> None:
         auth = (os.environ["RAZORPAY_KEY_ID"], os.environ["RAZORPAY_KEY_SECRET"])
-        self._http = httpx.Client(base_url=BASE, auth=auth, timeout=20.0)
+        # transport is injected only by tests (httpx.MockTransport); production
+        # leaves it None and httpx picks its default network transport.
+        self._http = httpx.Client(base_url=BASE, auth=auth, timeout=20.0, transport=transport)
 
-    def create_payment_link(self, amount_paise: int, description: str, reference_id: str) -> dict:
-        resp = self._http.post("/payment_links", json={
+    def create_payment_link(self, amount_paise: int, description: str, reference_id: str,
+                            notes: dict[str, str] | None = None) -> dict:
+        body: dict = {
             "amount": amount_paise,
             "currency": "INR",
             "description": description,
             "reference_id": reference_id,
-        })
+        }
+        if notes:
+            # notes ride along onto the payment entity itself (verified in
+            # docs/spike-notes.md, A0), which is how a failed payment is
+            # correlated back to a customer without a webhook.
+            body["notes"] = notes
+        resp = self._http.post("/payment_links", json=body)
         resp.raise_for_status()
         return resp.json()
 
@@ -33,6 +42,16 @@ class RazorpayClient:
         resp = self._http.get(f"/payment_links/{link_id}")
         resp.raise_for_status()
         return resp.json()
+
+    def list_payments(self, from_ts: int, to_ts: int, count: int = 100, skip: int = 0) -> list[dict]:
+        """GET /v1/payments in a Unix-time window. Failed attempts DO appear here
+        with status="failed" and an error_reason -- unlike a Payment Link's own
+        payments[] array, which only ever lists captured payments
+        (docs/spike-notes.md, A0). Returns the unwrapped `items` list."""
+        resp = self._http.get("/payments", params={"from": from_ts, "to": to_ts,
+                                                   "count": count, "skip": skip})
+        resp.raise_for_status()
+        return resp.json().get("items", [])
 
 
 def poll_until_terminal(client, link_id: str, timeout_s: int = 300, interval_s: int = 5) -> str:

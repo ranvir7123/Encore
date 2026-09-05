@@ -4,7 +4,7 @@
     {
       "name": "encore-web",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765"],
+      "runtimeArgs": ["-m", "http.server", "8765", "-d", "web"],
       "port": 8765
     }
   ]

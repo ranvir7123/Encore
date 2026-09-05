@@ -20,7 +20,12 @@ the map and the rulebook, not the pitch.
 | `src/encore/razorpay_client.py` | Thin `httpx` wrapper over the Razorpay Payment Links API (`create_payment_link`, `fetch_payment_link`) plus `poll_until_terminal()`. `TERMINAL_STATUSES = {"paid", "cancelled", "expired"}` — deliberately excludes "failed"; see the module docstring and `docs/spike-notes.md`. |
 | `src/encore/demo.py` | `run_demo_slice()`: Task 11's real-rail proof — takes real soft-decline failures from a seeded `Portfolio`, creates genuine Razorpay test-mode Payment Links, polls them, writes the same audit-log shape the simulator writes. `--dry-run` runs the identical code path against `SimulatedRail` instead. |
 | `src/encore/report.py` | `format_rupees()` (integer paise → `₹` string, Indian digit grouping — the only place a paise integer becomes a display string), `render()`/`write_scoreboard()` (builds `runs/scoreboard.html` from `runs/eval.json`, plain f-strings, no template engine). |
-| `src/encore/cli.py` | `encore` entry point (`pyproject.toml`: `encore = "encore.cli:main"`). Four subcommands: `eval`, `report`, `parse-eval`, `demo`. |
+| `src/encore/cli.py` | `encore` entry point (`pyproject.toml`: `encore = "encore.cli:main"`). Seven subcommands: `eval`, `report`, `parse-eval`, `demo`, `web`, `seed-live`, `agent`. |
+| `src/encore/sources.py` | Where failed debits come from, in one shape: `SimulatedFailureSource` (wraps `Portfolio.run_cycle`) and `RazorpayFailureSource` (failed payments from `GET /v1/payments`, customer carried on the payment's notes). `ERROR_REASON_TO_DECLINE` is deliberately two entries; anything else lands in `unmapped` for the agent to park and report, never to retry. |
+| `src/encore/clock.py` | The agent's injected sense of time (`InstantClock` for tests, `SimClock` for the demo) so `wall.py` stays clock-free. |
+| `src/encore/rails.py` | `SimulatedAgentRail` (resolves at once) and `RazorpayLinkRail` (creates a real test-mode Payment Link, answers `pending` until paid); one outcome vocabulary for the agent. |
+| `src/encore/agent.py` | `RecoveryAgent`: the live loop. Delivers replies as they arrive, asks `wall.decide()` for every nudge and retry, executes on a rail, polls pending links, parks with a reason whenever it gives up. Not `Scheduler.run`, which is the batch evaluator behind the matrix. |
+| `src/encore/board.py` | `build_board` (pure transform over agent records) and `render_board` (one f-string page that refreshes itself). Written atomically to `runs/board.html` on every tick. |
 | `scripts/spike.py` | Task 2's original Razorpay Payment Links spike script (create + fetch a link). Historical, not part of the pipeline. |
 | `data/reply_eval.jsonl` | 40-row hand-labeled `{text, kind, promise_day}` set the parser is scored against. |
 | `runs/` | Gitignored. `eval.json`, `scoreboard.html`, per-cell audit/ledger files, demo artifacts. Regenerate with `encore eval` / `encore report` / `encore demo`; nothing here is committed. |
@@ -60,6 +65,21 @@ uv run encore demo [--n 3] [--timeout 300] [--dry-run]
 # RAZORPAY_KEY_SECRET in .env and creates real (test-mode) Payment Links --
 # each reference_id is consumed forever on the account, see docs/spike-notes.md.
 # --dry-run runs the identical path against SimulatedRail, no network.
+```
+
+```bash
+uv run encore seed-live --n 2 [--seed 100 --regime r1_shifted]
+# creates N real test-mode Payment Links standing in for N customers' ORIGINAL
+# debits (notes carry customer_id); the operator fails them on checkout with
+# the insufficient-funds test card 4100 2800 0008 0001. Writes runs/live_originals.json.
+
+uv run encore agent --batch 50 --live 2 [--speed 2 --timeout 180] [--dry-run]
+# the recovery loop: --batch simulated failures on the simulated rail plus
+# --live real failed payments (detected through the Payments API) on real
+# Payment Links, one wall, one ledger, one audit log. Board at runs/board.html,
+# audit at runs/agent_audit.jsonl, ledger at runs/agent_ledger.txt (a _dryrun
+# suffix on all three under --dry-run, which also forces --live 0).
+# --speed is simulated hours per real second; 0 means instant.
 ```
 
 Copy `.env.example` to `.env` and fill in `RAZORPAY_KEY_ID`,

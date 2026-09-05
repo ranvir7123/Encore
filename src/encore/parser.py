@@ -64,15 +64,47 @@ Return ONLY JSON: {"kind": "promise_to_pay"|"cancel"|"dispute"|"other",
 money arrives. Replies may be Hindi/Hinglish. Do not invent a day."""
 
 
-def parse_llm(text: str, model: str = "claude-sonnet-5") -> ReplyIntent:
+def anthropic_headers() -> dict[str, str]:
+    """Identity-linked API keys must name the workspace every request acts in
+    (`anthropic-workspace-id`); plain keys need nothing. Read from
+    ANTHROPIC_WORKSPACE_ID so the key type stays a deployment detail."""
+    workspace = os.environ.get("ANTHROPIC_WORKSPACE_ID")
+    return {"anthropic-workspace-id": workspace} if workspace else {}
+
+
+def extract_json_object(reply: str) -> str:
+    """The reply sliced to its outermost {...}. Haiku 4.5 wraps its JSON in a
+    ```json fence despite "Return ONLY JSON" (BROKELOG entry 16); Sonnet 5
+    returns it bare. Slicing to the braces accepts both without trusting
+    either, and a reply with no object at all raises."""
+    start, end = reply.find("{"), reply.rfind("}")
+    if start == -1 or end < start:
+        raise ValueError(f"no JSON object in model reply: {reply[:80]!r}")
+    return reply[start:end + 1]
+
+
+def parse_llm(text: str, model: str = "claude-sonnet-5", strict: bool = False) -> ReplyIntent:
+    """Classify one reply with a Claude model, through the same pydantic
+    ReplyIntent the keyword parser uses.
+
+    On the money-adjacent path (strict=False, the default) ANY failure --
+    missing key, network, API error, bad JSON, validation -- falls back to
+    parse_keyword, so the model can never break the pipeline. `encore
+    parse-eval` passes strict=True: a measurement must not quietly turn into
+    the keyword parser's numbers wearing a model's name."""
     try:
         import anthropic
 
-        client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+        client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"],
+                                     default_headers=anthropic_headers())
         msg = client.messages.create(
-            model=model, max_tokens=100, system=SYSTEM,
+            model=model, max_tokens=400, system=SYSTEM,
             messages=[{"role": "user", "content": text}],
         )
-        return ReplyIntent(**json.loads(msg.content[0].text))
-    except Exception:  # noqa: BLE001 -- intentional: any failure (missing key, network, API error, JSON, validation) must fall back, never break the pipeline
+        # models with thinking on return a thinking block first; take the text one
+        reply = next(b.text for b in msg.content if b.type == "text")
+        return ReplyIntent(**json.loads(extract_json_object(reply)))
+    except Exception:
+        if strict:
+            raise
         return parse_keyword(text)  # the model never gets to break the pipeline
