@@ -951,7 +951,7 @@ edited after the fact.
   makes that assumption invisible.
 - **Fix:** slice the reply to its outermost `{...}` before `json.loads`, so
   fenced and bare replies both parse and anything without an object raises.
-  Commit hash backfilled below.
+  Fix commit: `203897b`.
 - **Still open:** whether the two models also differ on the six `dispute`
   rows, the reason the LLM rows exist, is what the completed run measures;
   README §6 carries the result.
