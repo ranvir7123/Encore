@@ -339,3 +339,7 @@ uv run encore agent --live 1 --batch 50 --speed 6 --window-s 1200
 - `docs/spike-notes.md` — everything Razorpay test mode actually did,
   verbatim.
 - `AGENTS.md` — repo map, exact commands, the non-negotiable rules.
+- `https://ranvir7123.github.io/Encore/` — the evidence site, published from
+  `main`: the compliance wall running in your browser on the repo's own
+  `wall.py`, the cliff chart behind the control experiment, and the live-rail
+  record.
