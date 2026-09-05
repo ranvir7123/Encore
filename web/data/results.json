@@ -28,6 +28,7 @@
     "promise_aware_random"
   ],
   "industry_baseline": "fixed_t123",
+  "shipped_policy": "promise_aware_random",
   "cells": {
     "r0_base/immediate_x3": {
       "regime": "r0_base",
@@ -617,19 +618,27 @@
   "headline": {
     "r0_base": {
       "learned_over_fixed_t123": 2.766851442757012,
-      "random_over_learned": 0.9927807470013799
+      "random_over_learned": 0.9927807470013799,
+      "shipped_over_fixed_t123": 2.666777972252282,
+      "shipped_over_random": 0.9708400214018191
     },
     "r1_shifted": {
       "learned_over_fixed_t123": 2.8477982697368036,
-      "random_over_learned": 1.4568270327995927
+      "random_over_learned": 1.4568270327995927,
+      "shipped_over_fixed_t123": 4.370914774769619,
+      "shipped_over_random": 1.0535499362590472
     },
     "r2_no_signal": {
       "learned_over_fixed_t123": 3.166499241587919,
-      "random_over_learned": 1.0889839421614314
+      "random_over_learned": 1.0889839421614314,
+      "shipped_over_fixed_t123": 3.3787343487448704,
+      "shipped_over_random": 0.9798355284842871
     },
     "r3_noisy_promise": {
       "learned_over_fixed_t123": 2.8477982697368036,
-      "random_over_learned": 1.4568270327995927
+      "random_over_learned": 1.4568270327995927,
+      "shipped_over_fixed_t123": 4.391218659420256,
+      "shipped_over_random": 1.0584439132596892
     }
   },
   "totals": {

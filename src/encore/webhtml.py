@@ -210,20 +210,23 @@ def render_headline_figures(results: dict, cliff: dict, *, regime: str = "r1_shi
     from the generated data, so the hero cannot drift from the matrix under it."""
     head = results["headline"][regime]
     baseline = results["industry_baseline"]
-    learned_ratio = head["learned_over_fixed_t123"]
+    shipped = results["shipped_policy"]
+    shipped_ratio = head["shipped_over_fixed_t123"]
     random_ratio = head["random_over_learned"]
     cells = results["totals"]["cells"]
 
     cards = [
-        (f"{learned_ratio:.2f}x" if learned_ratio else "n/a", "recovered",
-         "Recovery vs industry baseline",
-         f"Against {baseline}, Razorpay's documented T+1/T+2/T+3 shape.", "is-good"),
+        (f"{shipped_ratio:.2f}x" if shipped_ratio else "n/a", "recovered",
+         "Shipped policy vs industry baseline",
+         (f"{shipped} against {baseline}, Razorpay's documented T+1/T+2/T+3 shape. "
+         "No model in it."), "is-good"),
         (str(results["totals"]["compliance_violations"]), f"of {cells} cells",
          "Compliance violations",
          "Checked by replaying every execution record against the wall.", "is-good"),
         (f"+{round((random_ratio - 1) * 100)}%" if random_ratio else "n/a", "vs the model",
-         "Uniform random, held-out regime",
-         "Our own control. It beat the trained policy, and we published it.", "is-flag"),
+         "Uniform random vs the trained model",
+         "Our own control. It beat the model we started with, so the model does not ship.",
+         "is-flag"),
         (str(test_count), "passing", "Test suite",
          "24 of them adversarial, aimed squarely at the wall.", ""),
     ]
@@ -274,6 +277,8 @@ def render_page(template: str, results: dict, cliff: dict, *, test_count: int,
 
     random_margin = head["random_over_learned"]
     learned_ratio = head["learned_over_fixed_t123"]
+    shipped_ratio = head["shipped_over_fixed_t123"]
+    shipped_over_random = head["shipped_over_random"]
 
     values = {
         "HEADLINE_FIGURES": render_headline_figures(results, cliff, regime=regime,
@@ -284,6 +289,11 @@ def render_page(template: str, results: dict, cliff: dict, *, test_count: int,
         "RANDOM_MARGIN": (f"{round((random_margin - 1) * 100)}%"
                           if random_margin else "an unmeasured margin"),
         "LEARNED_RATIO": f"{learned_ratio:.2f}x" if learned_ratio else "n/a",
+        "SHIPPED_RATIO": f"{shipped_ratio:.2f}x" if shipped_ratio else "n/a",
+        # Signed on purpose: where promises cannot apply the shipped policy sits
+        # a few percent BELOW the control, and the page has to say so.
+        "SHIPPED_OVER_RANDOM": (f"{round((shipped_over_random - 1) * 100):+d}%"
+                                if shipped_over_random else "an unmeasured margin"),
         "VIOLATIONS": str(results["totals"]["compliance_violations"]),
         "CELLS": str(results["totals"]["cells"]),
         "LEARNED_BEFORE": str(_window(learned, days, cliff_day - PRE_CLIFF_DAYS,

@@ -112,11 +112,17 @@ def test_ratio_against_the_industry_baseline_is_reported_per_regime():
         "r1_shifted/fixed_t123": _cell(recovered=50_000),
         "r1_shifted/encore_learned": _cell(recovered=150_000),
         "r1_shifted/random_in_horizon": _cell(recovered=200_000),
+        "r1_shifted/promise_aware_random": _cell(recovered=210_000),
     })
     out = build_results(ev, **PROV)
     head = out["headline"]["r1_shifted"]
     assert head["learned_over_fixed_t123"] == pytest.approx(3.0)
     assert head["random_over_learned"] == pytest.approx(200_000 / 150_000)
+    # the shipped policy is what the hero quotes; the model's ratio stays for
+    # the "does not hold" claim
+    assert out["shipped_policy"] == "promise_aware_random"
+    assert head["shipped_over_fixed_t123"] == pytest.approx(4.2)
+    assert head["shipped_over_random"] == pytest.approx(210_000 / 200_000)
 
 
 def test_zero_baseline_does_not_divide_by_zero():

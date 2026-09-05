@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Encore — Retry Sequencing Lab Report</title>
-<meta name="description" content="A failed-debit retry sequencer for Indian subscription payments. A pure-function compliance wall you can try to break in your browser, and the control experiment that refuted our own machine-learning claim.">
+<title>Encore — Recovery Agent Lab Report</title>
+<meta name="description" content="A recovery agent for failed Indian subscription debits. It detects failed payments on Razorpay, decides inside a pure-function compliance wall you can try to break in your browser, and ships a policy with no model in it, because the control experiment refuted our own machine-learning claim.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -19,6 +19,7 @@
     <a href="#abstract">Abstract</a>
     <a href="#method">Method</a>
     <a href="#results" aria-current="true">Results</a>
+    <a href="#live">Live rail</a>
     <a href="#discussion">Discussion</a>
   </div>
   <div class="topnav-tools">
@@ -58,6 +59,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
       <span>Results</span>
     </a>
+    <a href="#live">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      <span>Live rail</span>
+    </a>
     <a href="#engine">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
       <span>Engine log</span>
@@ -74,13 +79,16 @@
 
     <!-- ================= ABSTRACT / HERO ================= -->
     <section id="abstract">
-      <p class="label-caps">Failed-debit retry sequencing · UPI AutoPay &amp; eNACH</p>
+      <p class="label-caps">Failed-debit recovery agent · UPI AutoPay &amp; eNACH</p>
       <h1>Every retry has to get past a wall that cannot be argued with.</h1>
       <p class="lede hero-lede">
         Encore decides <em>when</em> to retry a failed subscription debit. It never decides
         <em>whether</em> one is allowed. That belongs to a pure function with no network,
         no clock and no model behind it — and below, it is running in your browser on the
-        same <code>wall.py</code> the test suite exercises.
+        same <code>wall.py</code> the test suite exercises. The agent that detects the
+        failure, nudges, reads the reply and collects on a real Payment Link is in the
+        <a href="https://github.com/ranvir7123/Encore">repository</a>; its one real rupee
+        trail is <a href="#live">below</a>.
       </p>
 
       <div class="wall-panel" id="wall-stage">
@@ -110,10 +118,43 @@
       {{HEADLINE_FIGURES}}
     </section>
 
+    <hr class="rule">
+
+    <!-- ================= LIVE RAIL ================= -->
+    <section id="live">
+      <p class="label-caps">Live rail · Razorpay test mode, 2 September 2026</p>
+      <h2>One real rupee trail, end to end.</h2>
+      <p>
+        One original debit for <code>cust_0055</code> was failed on checkout with Razorpay's
+        insufficient-funds test card. The agent found it through <code>GET /v1/payments</code>
+        with its reason code, correlated it to the customer by the notes the original link
+        carried, recorded a nudge, asked <code>wall.decide()</code> for a retry hour inside the
+        22:00–07:00 window, created a real Payment Link, polled it, and booked the payment when
+        a human paid it. Fifty simulated failures ran beside it through the same wall, ledger
+        and audit log.
+      </p>
+      <pre class="record">{"event": "execution", "customer_id": "cust_0055", "attempt_id": "cust_0055:TXE0tL9so92THj:retry:1", "at_hour": 51, "outcome": "success", "amount_paise": 99900, "policy": "promise_aware_random", "original_decline": "generic_decline", "attempt_no": 1, "rail": "razorpay_test_mode", "link_id": "plink_TXE1mRxcuLVWJS", "short_url": "https://rzp.io/rzp/aAabolSJ", "status": "paid"}</pre>
+      <p>
+        Verbatim from <a href="https://github.com/ranvir7123/Encore/blob/main/docs/evidence/agent-audit-2026-09-02.jsonl">the audit log</a>;
+        the <a href="https://github.com/ranvir7123/Encore/blob/main/docs/evidence/board-2026-09-02-live.html">final board</a> and the
+        <a href="https://github.com/ranvir7123/Encore/blob/main/docs/evidence/agent-live-run-2026-09-02.log">transcript</a> are next to it.
+        Two earlier rehearsals recovered nothing on the real rail: a paid link that missed a
+        240-second timeout by 12 seconds, then a customer who paid the original demand the
+        agent was not watching. Both are <code>BROKELOG.md</code> entries 14 and 15, and both
+        changed the code.
+      </p>
+      <p class="note">
+        <strong>What is and is not real here.</strong> The failed payment, its detection, the
+        Payment Link and the ₹999 capture are real test-mode objects on Razorpay. The customer's
+        reply is simulated, no message was sent to anyone, and every rupee in the matrix above
+        is simulator money.
+      </p>
+    </section>
+
     <!-- ================= DISCUSSION: THE HONEST PART ================= -->
     <section id="discussion">
       <p class="label-caps">Read this before you quote a number</p>
-      <h2>We ran the control that could kill our own headline. It killed part of it.</h2>
+      <h2>We ran the control that could kill our own headline. It killed the model. What ships has no model in it.</h2>
       <p>
         The interesting claim was that a trained model learned <em>when customers have
         money</em>. So we built <code>random_in_horizon</code>: a policy that picks its retry
@@ -125,27 +166,34 @@
         On held-out data the coin wins by <strong class="num">{{RANDOM_MARGIN}}</strong>.
         It is not brute force — it recovered more using fewer attempts. A heuristic with no
         model at all (<code>fixed_spread10</code>: retry at T+3, T+6, T+9) gets most of the
-        way there too, so most of our headline was available with no learning in it.
+        way there too. So the policy the agent ships, <code>promise_aware_random</code>, is
+        the coin plus the customer's own reply: if they named a payday, retry on it;
+        otherwise a uniform draw inside the compliant window. On this regime it beats the
+        control by <strong class="num">{{SHIPPED_OVER_RANDOM}}</strong>, read against a
+        2–3% noise floor between two random streams.
       </p>
       <ul class="claims">
         <li>
           <span class="tag tag-holds">Holds</span>
-          <span>Beats the industry-standard T+1/T+2/T+3 schedule
-            <strong class="num">{{LEARNED_RATIO}}</strong>, with
+          <span>The shipped policy beats the industry-standard T+1/T+2/T+3 schedule
+            <strong class="num">{{SHIPPED_RATIO}}</strong>, with
             <strong class="num">{{VIOLATIONS}}</strong> compliance violations across all
-            <strong class="num">{{CELLS}}</strong> cells.</span>
+            <strong class="num">{{CELLS}}</strong> cells. Nothing in it is learned.</span>
         </li>
         <li>
           <span class="tag tag-dead">Does not hold</span>
-          <span>That the model learned when customers have money. On the held-out regime a
-            uniform draw over the same hours beats it.</span>
+          <span>That the model learned when customers have money. It reached
+            <strong class="num">{{LEARNED_RATIO}}</strong> over the industry schedule, and on
+            the held-out regime a uniform draw over the same hours beats it by
+            <strong class="num">{{RANDOM_MARGIN}}</strong>.</span>
         </li>
       </ul>
       <p class="note">
         <strong>Our first explanation was wrong too.</strong> We blamed a hardcoded
         near-payday flag in the feature vector, removed it, and retrained. The de-biased
         model gained 3% and still lost. The real cause is below, and it is a measurement
-        problem rather than a modelling one.
+        problem rather than a modelling one. The model stays in the matrix as
+        <code>encore_learned</code> so the comparison can be re-run; it is not in the agent.
       </p>
     </section>
 
@@ -153,7 +201,7 @@
 
     <!-- ================= METHOD: THE CLIFF ================= -->
     <section id="method">
-      <p class="label-caps">Method · regime r1_shifted, held out from training</p>
+      <p class="label-caps">Method · regime r1_shifted, held out from training · the model that did not ship</p>
       <h2>The model is not ignoring payday. It is two days early.</h2>
       <p>
         In this regime success is not a gradient — it is a step. Before day 25 a retry
