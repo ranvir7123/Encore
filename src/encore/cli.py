@@ -239,6 +239,14 @@ def cmd_agent(args: argparse.Namespace) -> None:
     at_risk = {f.customer_id: f.amount_paise for f in batch + live_failures}
     at_risk.update({u["customer_id"]: u["amount_paise"] for u in unmapped})
 
+    # Reply parser: keywords by default; a Claude model when asked (README §6
+    # has the measured accuracy of each). Never strict here -- on the money-
+    # adjacent path any API failure falls back to keywords, never breaks the run.
+    parse_fn = parse_keyword
+    if args.parser != "keyword":
+        load_dotenv()
+        parse_fn = functools.partial(parse_llm, model=args.parser)
+
     # The shipped policy is the best MEASURED one in runs/eval.json: the parsed
     # promise when there is one, uniform-random inside the compliant window
     # otherwise, on a seeded stream so a rerun replays the same hours.
@@ -247,7 +255,8 @@ def cmd_agent(args: argparse.Namespace) -> None:
         max_hour=EVAL_HORIZON_HOURS, name="promise_aware_random")
     provenance = (f"seed {args.seed} | regime {args.regime} | {len(batch)} simulated + "
                   f"{len(live_failures)} live on Razorpay test mode | policy {policy.name} | "
-                  f"{args.speed} sim-hours per second | {'DRY RUN' if dry else 'live'}")
+                  f"parser {args.parser} | {args.speed} sim-hours per second | "
+                  f"{'DRY RUN' if dry else 'live'}")
     printed = {"links": 0}
 
     def on_tick(agent: RecoveryAgent, result) -> None:
@@ -263,6 +272,7 @@ def cmd_agent(args: argparse.Namespace) -> None:
 
     clock = SimClock(1.0 / args.speed) if args.speed > 0 else InstantClock()
     agent = RecoveryAgent(WallConfig(), policy, SimulatedAgentRail(world), audit, ledger, clock,
+                          parse_fn=parse_fn,
                           live_rail=live_rail, live_customers=frozenset(live_ids),
                           poll_interval_s=args.interval, timeout_s=args.timeout, on_tick=on_tick,
                           capture_watch=capture_watch)
@@ -331,7 +341,7 @@ def build_parser() -> argparse.ArgumentParser:
                        help="customers per seed the eval was run with, for the provenance line")
     p_web.add_argument("--template", default="web/index.template.html",
                        help="hand-written page template; measured values are substituted in")
-    p_web.add_argument("--test-count", type=int, default=155,
+    p_web.add_argument("--test-count", type=int, default=156,
                        help="suite size quoted in the hero (keep in step with `uv run pytest -q`)")
     p_web.set_defaults(func=cmd_web)
 
@@ -360,6 +370,10 @@ def build_parser() -> argparse.ArgumentParser:
                          help="seconds to wait for a HUMAN to pay a live link (default: 600)")
     p_agent.add_argument("--window-s", type=int, default=3 * 3600, dest="window_s",
                          help="how far back to look for failed payments (default: 3h)")
+    p_agent.add_argument("--parser", default="keyword",
+                         choices=["keyword", "claude-haiku-4-5", "claude-sonnet-5"],
+                         help="reply parser (default: keyword; README section 6 has each one's "
+                              "measured accuracy)")
     p_agent.add_argument("--out-dir", default="runs")
     p_agent.add_argument("--dry-run", action="store_true",
                          help="everything on the simulator, no network; forces --live 0")

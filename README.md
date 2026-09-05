@@ -47,7 +47,7 @@ detect  ->  decide  ->  nudge  ->  read the reply  ->  collect  ->  report
 | Detect | `GET /v1/payments` lists failed attempts with an `error_reason`; the customer rides on the payment's `notes` (`src/encore/sources.py`) | `Portfolio.run_cycle` produces failed debits with a decline code |
 | Decide | `wall.decide()`, the same pure function in both | same |
 | Nudge | not sent; the agent records it and the wall counts it against the nudge budget | same |
-| Reply | **simulated** — Hinglish templates from the simulator, parsed by the keyword parser | same |
+| Reply | **simulated** — Hinglish templates from the simulator, parsed by the keyword parser by default (`--parser claude-sonnet-5` uses the model measured at 40/40 in §6) | same |
 | Collect | a real Payment Link, paid by a human on the mock bank; the agent polls it (`src/encore/rails.py`) | `Portfolio.debit` against the latent balance |
 | Book | `status: paid` on the link, or a captured payment carrying the customer's notes (self-cure) | balance cleared |
 
@@ -240,20 +240,31 @@ uv run encore agent --live 1 --batch 50 --speed 6 --window-s 1200
   display (`recovery_rate`, the operator's `INR x.xx` print). No float ever
   becomes a stored or transacted amount.
 - **The one place a model belongs is reading the customer.** The reply parser
-  defaults to keywords (regex over Hindi/Hinglish cancel and promise words);
-  its measured accuracy on the 40-row labeled set in `data/reply_eval.jsonl`:
+  defaults to keywords (regex over Hindi/Hinglish cancel and promise words).
+  Measured on the 40-row labeled set in `data/reply_eval.jsonl` by
+  `uv run encore parse-eval` on 2026-09-05, in strict mode (an API failure
+  raises rather than scoring the keyword fallback under a model's name):
 
-  | Parser | accuracy (kind) | accuracy (kind + promise_day) | n |
-  |---|---:|---:|---:|
-  | keyword | 27/40 = **0.675** | 27/40 = **0.675** | 40 |
-  | claude-haiku-4-5 | not yet measured — needs `ANTHROPIC_API_KEY` | — | 40 |
-  | claude-sonnet-5 | not yet measured — needs `ANTHROPIC_API_KEY` | — | 40 |
+  | Parser | accuracy (kind + promise_day) | promise_to_pay | cancel | dispute | other |
+  |---|---:|---:|---:|---:|---:|
+  | keyword | 27/40 = **0.675** | 12/17 | 7/9 | **0/6** | 8/8 |
+  | claude-haiku-4-5 | 37/40 = **0.925** | 17/17 | 8/9 | 5/6 | 8/8 |
+  | claude-sonnet-5 | 40/40 = **1.000** | 17/17 | 9/9 | 6/6 | 8/8 |
 
-  All 6 `dispute` rows are missed: the keyword parser has no dispute detector
-  and can never emit `kind="dispute"`. That gap is the reason the LLM rows
-  exist; `uv run encore parse-eval` fills them when a key is set and prints
-  nothing invented when it is not. Whichever parser wins, it still only ever
-  hands the agent a kill, a day, or a dispute.
+  The keyword parser's dispute failure is worse than a miss: three of the six
+  disputes ("maine already pay kar diya, phir se kyu", "paisa kat gaya par
+  subscription nahi mila") match its promise words and come out as
+  `promise_to_pay`, which would schedule a retry against a charge the customer
+  says was already taken. Haiku's one cancel miss is the same inversion
+  ("next month se mat kaatna paise" read as a promise). Sonnet 5 makes
+  neither mistake. The agent takes the parser as a flag (`encore agent
+  --parser claude-sonnet-5`); the recorded take used keywords, because the
+  replies were simulated from templates the keyword parser was written
+  against. Whichever parser is chosen, it still only ever hands the agent a
+  kill, a day, or a dispute, and falls back to keywords on any API failure.
+  Getting these three rows took an identity-linked key that needs a
+  workspace header, and a fenced-JSON bug the old silent fallback would have
+  hidden: `BROKELOG.md` entry 16.
 
 ## 7. Prior art
 

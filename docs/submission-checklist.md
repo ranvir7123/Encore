@@ -46,17 +46,21 @@ Say these unprompted; each is verifiable by reading one file.
   three takes: the 240-second timeout (entry 14) and the customer paying
   the original link (entry 15), which became the self-cure watch.
 - Where AI is not used, and the one place it belongs: reading the customer.
-  The LLM parser rows are unmeasured without a key, and the README says so
-  rather than inventing them.
+  Measured 2026-09-05 on 40 labeled Hinglish replies: keyword 27/40 with 0 of
+  6 disputes and three disputes misread as promises to pay; Haiku 4.5 37/40;
+  Sonnet 5 40/40. Getting there took an identity-linked key, a workspace
+  header, and a fenced-JSON bug the silent fallback would have hidden
+  (entry 16). The agent takes the parser as a flag.
 - Money is integer paise everywhere; the only floats are display.
 
 ## The 6/12-month answer
 
 Concrete, each a named gap in the repo, not a roadmap slogan.
 
-- **Measure the LLM parser.** `uv run encore parse-eval` with an
-  `ANTHROPIC_API_KEY`; the 6 `dispute` rows the keyword parser cannot
-  catch are the test. Until then those rows say "not measured".
+- **Grow the reply set past 40 rows and price the parser.** Sonnet 5 is
+  40/40 on the labeled set; the next questions are how it holds on a few
+  hundred real replies, what a classification costs per reply, and whether
+  a `dispute` should route to a human queue rather than a park.
 - **Live-mode error reasons.** Test mode reports every card decline as
   `payment_failed`; the mapping table needs live data to tell "no money"
   from "bank said no", which is the difference between a retry and a park.
