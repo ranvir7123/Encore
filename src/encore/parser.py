@@ -72,6 +72,17 @@ def anthropic_headers() -> dict[str, str]:
     return {"anthropic-workspace-id": workspace} if workspace else {}
 
 
+def extract_json_object(reply: str) -> str:
+    """The reply sliced to its outermost {...}. Haiku 4.5 wraps its JSON in a
+    ```json fence despite "Return ONLY JSON" (BROKELOG entry 16); Sonnet 5
+    returns it bare. Slicing to the braces accepts both without trusting
+    either, and a reply with no object at all raises."""
+    start, end = reply.find("{"), reply.rfind("}")
+    if start == -1 or end < start:
+        raise ValueError(f"no JSON object in model reply: {reply[:80]!r}")
+    return reply[start:end + 1]
+
+
 def parse_llm(text: str, model: str = "claude-sonnet-5", strict: bool = False) -> ReplyIntent:
     """Classify one reply with a Claude model, through the same pydantic
     ReplyIntent the keyword parser uses.
@@ -92,7 +103,7 @@ def parse_llm(text: str, model: str = "claude-sonnet-5", strict: bool = False) -
         )
         # models with thinking on return a thinking block first; take the text one
         reply = next(b.text for b in msg.content if b.type == "text")
-        return ReplyIntent(**json.loads(reply))
+        return ReplyIntent(**json.loads(extract_json_object(reply)))
     except Exception:
         if strict:
             raise

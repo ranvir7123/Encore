@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from encore.parser import ReplyIntent, evaluate, parse_keyword, parse_llm
@@ -61,3 +62,21 @@ def test_anthropic_headers_name_the_workspace_only_when_configured(monkeypatch):
     assert anthropic_headers() == {}
     monkeypatch.setenv("ANTHROPIC_WORKSPACE_ID", "wrkspc_test")
     assert anthropic_headers() == {"anthropic-workspace-id": "wrkspc_test"}
+
+
+def test_extract_json_object_accepts_fenced_and_bare_replies():
+    from encore.parser import extract_json_object
+
+    fenced = '```json\n{\n  "kind": "cancel",\n  "promise_day": null\n}\n```'
+    assert json.loads(extract_json_object(fenced)) == {"kind": "cancel", "promise_day": None}
+    bare = '{"kind": "promise_to_pay", "promise_day": 5}'
+    assert json.loads(extract_json_object(bare)) == {"kind": "promise_to_pay", "promise_day": 5}
+
+
+def test_extract_json_object_rejects_replies_without_an_object():
+    import pytest
+
+    from encore.parser import extract_json_object
+
+    with pytest.raises(ValueError):
+        extract_json_object("Sorry, I cannot classify that.")
