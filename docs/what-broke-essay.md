@@ -1,6 +1,6 @@
-# What broke: eight times the instrument, the API, or the human was not what we assumed
+# What broke: nine times the instrument, the API, or the human was not what we assumed
 
-Assembled only from `BROKELOG.md`'s fifteen real, append-only entries, each
+Assembled only from `BROKELOG.md`'s sixteen real, append-only entries, each
 written before its fix and carrying the commit hash that closed it. Nothing
 here is reconstructed in hindsight.
 
@@ -11,7 +11,8 @@ the reply, collects on a real Payment Link, and reports. Every serious bug
 we hit had the same shape, and it was never the shape we expected: **the
 code was fine and something we had trusted was not.** First the
 measurement, four times. Then the platform, once. Then the human in the
-loop, twice. And once, our own prediction of what a fix would do.
+loop, twice. And once, our own prediction of what a fix would do. And
+once more the measurement, in the one place we let a model in.
 
 ## 1. The training labels had no timing signal in them
 
@@ -127,6 +128,27 @@ The third rehearsal landed: one real failed debit detected, one real
 recovery link created by the agent, paid inside the window, booked as
 `outcome: success, status: paid`. It is in `docs/evidence/`.
 
+## 9. The AI parser had never actually run, and the fallback would have hidden it
+
+The one place we let a language model into the loop is reading the
+customer's reply. `parse_llm` classified a Hinglish reply with Claude and,
+on any failure, fell back to the keyword parser so the model could never
+break the pipeline. That safety was also a blindfold. The first time
+`encore parse-eval` ran with a real key, Haiku returned its JSON inside a
+markdown fence despite "Return ONLY JSON"; `json.loads` raised, and only
+because a strict mode added two days earlier let it. On the code as it
+stood before that, the run would have printed a Haiku row identical to the
+keyword row, and nobody would have known the model had never been
+consulted. Getting a key at all took two tries: the first was
+identity-linked and needed a workspace header on every request. The reply
+is now sliced to its outermost braces before parsing, and a reply with no
+object raises. Commit `203897b`. The measured rows in README §6 exist
+because of this entry: keyword 27/40 with 0 of 6 disputes and three
+disputes misread as promises to pay, Haiku 4.5 37/40, Sonnet 5 40/40.
+
+**A fallback that never reports firing is a measurement that cannot fail,
+and a measurement that cannot fail is not a measurement.**
+
 ## What survives
 
 The compliance wall: a pure function with 24 adversarial tests pinning a
@@ -137,7 +159,8 @@ log. A shipped policy with no model in it — the parsed promise when there
 is one, a uniform draw inside the compliant window otherwise — that
 recovers 4.4x what the industry schedule does on the held-out regime, where
 the promise signal is worth about 5% against a 2–3% noise floor that we
-report next to it.
+report next to it. And a measured answer to where the model belongs:
+reading the customer, 40 of 40 with Sonnet 5 against 27 of 40 for keywords.
 
 What does not survive is the claim that the machine learning earned any of
 it. The model ties the random control on the regime it trained on and

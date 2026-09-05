@@ -8,7 +8,7 @@ a 32-cell simulator matrix it recovers **4.4x what Razorpay's documented
 T+1/T+2/T+3 schedule does, with zero compliance violations in every cell**.
 The trained model this project started with ties a uniform-random control on
 the regime it trained on and loses to it under distribution shift, so it does
-not ship. Both results, and the fifteen things that broke on the way, are in
+not ship. Both results, and the sixteen things that broke on the way, are in
 `BROKELOG.md`, each written before its fix.
 
 > **Read §8 before the metrics table.** Every rupee in §3 is simulator money.
@@ -87,7 +87,9 @@ Pasted verbatim from `runs/eval.json`, the real output of `uv run encore eval`
 with seeds `[100, 101, 102]` and `n_customers=500` per seed. Both learned
 models are trained once on regime `r0_base`, seeds `1`–`5` (never an eval
 seed). Money is in ₹, Indian digit grouping, exactly as `encore report`
-renders it. 4 regimes × 8 policies = 32 cells.
+renders it. 4 regimes × 8 policies = 32 cells. `runs/` is gitignored, so the
+same 32 cells are also committed as `web/data/results.json`, which the
+evidence site is rendered from; `uv run encore eval` reproduces both.
 
 **Read the `random_in_horizon` row before any other.** It is the control that
 decides what this table shows.
@@ -205,7 +207,7 @@ which has no I/O, no clock and no randomness by project rule.
 
 ```bash
 uv sync
-uv run pytest -q                      # 151 tests
+uv run pytest -q                      # 158 tests
 uv run encore eval                    # 32 cells, ~12 min, writes runs/eval.json
 uv run encore report                  # runs/scoreboard.html
 uv run encore agent --dry-run --batch 50 --speed 0    # the loop, no network, board at runs/board_dryrun.html
@@ -330,7 +332,7 @@ uv run encore agent --live 1 --batch 50 --speed 6 --window-s 1200
 
 ## Other references
 
-- `BROKELOG.md` — fifteen append-only entries, each written before its fix,
+- `BROKELOG.md` — sixteen append-only entries, each written before its fix,
   with the commit that closed it. The essay in `docs/what-broke-essay.md` is
   assembled from it.
 - `docs/evidence/` — the take-3 board, transcript and audit log.

@@ -1,8 +1,9 @@
 [project]
 name = "encore"
 version = "0.1.0"
-description = "Add your description here"
+description = "Recovery agent for failed Indian subscription debits: NPCI-shaped compliance wall, no model on the money path, real Razorpay test-mode recovery."
 readme = "README.md"
+license = "MIT"
 authors = [
     { name = "ranvir7123", email = "ranvir7123@gmail.com" }
 ]
