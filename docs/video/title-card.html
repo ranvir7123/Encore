@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Encore — title card</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  /* The opening 20 seconds of the demo video. Static, no JavaScript. Every
+     number is from README section 1 and carries its source there. */
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #000d2f; color: #fcf8f9;
+    font: 400 22px/1.45 "IBM Plex Sans", system-ui, sans-serif;
+    display: grid; place-items: center;
+  }
+  main { max-width: 1400px; padding: 48px 64px; }
+  .wordmark {
+    font: 600 120px/1 "IBM Plex Serif", Georgia, serif; letter-spacing: -0.02em;
+    margin: 0 0 18px;
+  }
+  .pitch {
+    font: 500 34px/1.3 "IBM Plex Serif", Georgia, serif; color: #dfe3f5;
+    margin: 0 0 56px; max-width: 1200px;
+  }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+  .stat { border-top: 2px solid #8a9bd6; padding-top: 18px; }
+  .stat .v { font: 500 64px/1.05 "IBM Plex Mono", ui-monospace, monospace; color: #ffffff; }
+  .stat .k { margin-top: 10px; color: #b9c2e6; font-size: 20px; }
+  .foot { margin-top: 56px; color: #8a9bd6; font: 500 18px "IBM Plex Mono", ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<main>
+  <h1 class="wordmark">Encore</h1>
+  <p class="pitch">A recovery agent for failed UPI AutoPay debits. It detects, nudges, reads the reply,
+    retries inside NPCI's rules, and books the money. No model on the money path.</p>
+  <div class="stats">
+    <div class="stat"><div class="v">55–90%</div><div class="k">UPI AutoPay execution failure rate, August 2025, across banks (NPCI data via Mint)</div></div>
+    <div class="stat"><div class="v">20M+</div><div class="k">mandates revoked per month, mostly over low balances (NPCI data via Business Standard)</div></div>
+    <div class="stat"><div class="v">1 + 3</div><div class="k">one execution plus three retries, non-peak windows only: the whole budget NPCI allows</div></div>
+  </div>
+  <p class="foot">github.com/ranvir7123/Encore · Razorpay AI Buildathon · AI Revenue Recovery</p>
+</main>
+</body>
+</html>

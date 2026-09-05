@@ -20,8 +20,11 @@ repo artifact: `README.md`, `BROKELOG.md`, `docs/spike-notes.md`,
   We also trained a timing model, built the control that refutes it, and
   report that it earns nothing.
 - **Repo URL:** https://github.com/ranvir7123/Encore
-- **Video link:** TODO(user) — record from `docs/demo-script.md`, upload
-  unlisted, paste here.
+- **Evidence site:** https://ranvir7123.github.io/Encore/ (GitHub Pages, published
+  from `main` by `.github/workflows/pages.yml`: the compliance wall running in the
+  browser on the repo's own `wall.py`, the cliff chart, and the live-rail record).
+- **Video link:** TODO(user) — record the three clips in `docs/demo-script.md`,
+  stitch, upload unlisted, paste here.
 - **What broke, and how you got out:** paste `docs/what-broke-essay.md`,
   trimmed to the field's limit. If the limit is tight, keep sections 3, 4,
   7 and 8 and the closing two paragraphs.
