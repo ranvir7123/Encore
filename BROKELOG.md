@@ -922,3 +922,36 @@ edited after the fact.
 - **Still open:** the recovery link that was never paid stays `created` on
   the account; the agent does not cancel it. Two takes, four real links, and
   zero real-rail recoveries recorded so far -- take 3 has to land one.
+
+### 2026-09-05 — The LLM parser had never actually run: Haiku fences its JSON, and the fallback would have hidden it
+- **What happened:** first real run of `uv run encore parse-eval` with a key.
+  The keyword row printed (0.675, n=40) and the `claude-haiku-4-5` pass
+  raised `json.decoder.JSONDecodeError: Expecting value: line 1 column 1`.
+  Two raw replies, captured for the first two labeled rows:
+
+  ```
+  claude-haiku-4-5 | 'salary 5 tarikh ko aayegi, tab try karna' | blocks=[('text', '```json\n{\n  "kind": "promise_to_pay",\n  "promise_day": 5\n}\n```')]
+  claude-haiku-4-5 | 'band kar do isko'                         | blocks=[('text', '```json\n{\n  "kind": "cancel",\n  "promise_day": null\n}\n```')]
+  claude-sonnet-5  | 'salary 5 tarikh ko aayegi, tab try karna' | blocks=[('text', '{"kind": "promise_to_pay", "promise_day": 5}')]
+  claude-sonnet-5  | 'band kar do isko'                         | blocks=[('text', '{"kind": "cancel", "promise_day": null}')]
+  ```
+
+  The classifications are right. Haiku wraps them in a markdown fence
+  despite the system prompt's "Return ONLY JSON"; Sonnet does not.
+- **Evidence:** the traceback above, and the two-row probe. It only
+  surfaced because commit 0a28605 made `parse-eval` pass `strict=True`; the
+  original `parse_llm` swallowed every exception into `parse_keyword`, so on
+  the code as it stood two days ago the run would have printed a
+  `claude-haiku-4-5` row identical to the keyword row and nobody would have
+  known. Getting a key at all took two tries (the first was an
+  identity-linked key that needs an `anthropic-workspace-id` header), which
+  is why the parser had never been exercised against the real API.
+- **Root cause:** `json.loads` on the whole text block assumed the model
+  obeys a formatting instruction. A classifier that falls back silently
+  makes that assumption invisible.
+- **Fix:** slice the reply to its outermost `{...}` before `json.loads`, so
+  fenced and bare replies both parse and anything without an object raises.
+  Commit hash backfilled below.
+- **Still open:** whether the two models also differ on the six `dispute`
+  rows, the reason the LLM rows exist, is what the completed run measures;
+  README §6 carries the result.
