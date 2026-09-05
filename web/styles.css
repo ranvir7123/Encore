@@ -373,6 +373,15 @@ section { margin-bottom: var(--margin-lg); }
 }
 .note strong { color: var(--secondary); }
 
+/* one verbatim audit record, wrapped so the whole line is readable on a phone */
+pre.record {
+  margin-top: var(--stack-lg); padding: 16px 20px;
+  border: 1px solid rgba(0, 13, 47, 0.2); border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(4px);
+  font-family: var(--mono); font-size: 13px; line-height: 20px;
+  color: var(--on-surface); white-space: pre-wrap; word-break: break-all;
+}
+
 /* ---------- terminal ---------- */
 .terminal {
   border-radius: var(--radius-lg); overflow: hidden;

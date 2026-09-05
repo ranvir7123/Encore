@@ -201,6 +201,25 @@ def cmd_seed_live(args: argparse.Namespace) -> None:
           "appears, click Failure. Then run: encore agent --live", len(created))
 
 
+def _probe_parser(model: str) -> None:
+    """One strict call before the run starts.
+
+    parse_llm falls back to keywords on any failure by design: the model must
+    never break the money-adjacent path. That same fallback would let the
+    board's provenance line name a model while keywords did all the work,
+    which is BROKELOG entry 16's failure on the agent. So a model that cannot
+    answer once stops the run before it starts, with a message that says so.
+    """
+    try:
+        parse_llm("band kar do isko", model=model, strict=True)
+    except Exception as e:
+        raise SystemExit(
+            f"parser {model} is not reachable ({type(e).__name__}: {e}). Refusing to run "
+            "with the model's name on the board while keywords do the work; "
+            "use --parser keyword."
+        ) from e
+
+
 def cmd_agent(args: argparse.Namespace) -> None:
     dry = args.dry_run
     live_n = 0 if dry else args.live
@@ -245,6 +264,7 @@ def cmd_agent(args: argparse.Namespace) -> None:
     parse_fn = parse_keyword
     if args.parser != "keyword":
         load_dotenv()
+        _probe_parser(args.parser)
         parse_fn = functools.partial(parse_llm, model=args.parser)
 
     # The shipped policy is the best MEASURED one in runs/eval.json: the parsed
@@ -341,7 +361,7 @@ def build_parser() -> argparse.ArgumentParser:
                        help="customers per seed the eval was run with, for the provenance line")
     p_web.add_argument("--template", default="web/index.template.html",
                        help="hand-written page template; measured values are substituted in")
-    p_web.add_argument("--test-count", type=int, default=156,
+    p_web.add_argument("--test-count", type=int, default=158,
                        help="suite size quoted in the hero (keep in step with `uv run pytest -q`)")
     p_web.set_defaults(func=cmd_web)
 

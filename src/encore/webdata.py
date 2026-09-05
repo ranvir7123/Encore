@@ -44,6 +44,13 @@ PRECOMPUTED_POLICIES = ["encore_learned", "encore_learned_nopayday", "promise_aw
 # documented T+1/T+2/T+3 subscription retry shape.
 INDUSTRY_BASELINE = "fixed_t123"
 
+# The policy the agent actually runs (cli.cmd_agent) and the horizon-matched
+# uniform control it is read against. The site's headline is the shipped
+# policy's ratio over the baseline; the model's ratio stays in the headline
+# dict for the "does not hold" claim, so both numbers come from one place.
+SHIPPED_POLICY = "promise_aware_random"
+CONTROL_POLICY = "random_in_horizon"
+
 RECOVERED = "recovered_per_1000_failures_paise"
 
 
@@ -74,7 +81,7 @@ def _ratio(numerator: int, denominator: int) -> float | None:
 
 
 def build_results(eval_dict: dict, *, seeds: list[int], customers: int) -> dict:
-    """`runs/eval.json` -> the 18-cell matrix the results table renders.
+    """`runs/eval.json` -> the 32-cell matrix the results table renders.
 
     Raises ValueError on a cell that is missing or unrecognised, so a
     truncated eval or a policy renamed in evaluate.py fails the build instead
@@ -118,11 +125,14 @@ def build_results(eval_dict: dict, *, seeds: list[int], customers: int) -> dict:
     headline = {}
     for regime in REGIME_ORDER:
         learned = eval_dict[f"{regime}/encore_learned"][RECOVERED]
+        baseline = eval_dict[f"{regime}/{INDUSTRY_BASELINE}"][RECOVERED]
+        control = eval_dict[f"{regime}/{CONTROL_POLICY}"][RECOVERED]
+        shipped = eval_dict[f"{regime}/{SHIPPED_POLICY}"][RECOVERED]
         headline[regime] = {
-            "learned_over_fixed_t123": _ratio(
-                learned, eval_dict[f"{regime}/{INDUSTRY_BASELINE}"][RECOVERED]),
-            "random_over_learned": _ratio(
-                eval_dict[f"{regime}/random_in_horizon"][RECOVERED], learned),
+            "learned_over_fixed_t123": _ratio(learned, baseline),
+            "random_over_learned": _ratio(control, learned),
+            "shipped_over_fixed_t123": _ratio(shipped, baseline),
+            "shipped_over_random": _ratio(shipped, control),
         }
 
     return {
@@ -131,6 +141,7 @@ def build_results(eval_dict: dict, *, seeds: list[int], customers: int) -> dict:
         "live_policies": list(LIVE_POLICIES),
         "precomputed_policies": list(PRECOMPUTED_POLICIES),
         "industry_baseline": INDUSTRY_BASELINE,
+        "shipped_policy": SHIPPED_POLICY,
         "cells": cells,
         "headline": headline,
         "totals": {

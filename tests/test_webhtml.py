@@ -108,10 +108,13 @@ def test_headline_figures_come_from_the_generated_data_not_a_literal():
         "r1_shifted/fixed_t123": {**_blank(), "recovered_per_1000_failures_paise": 50_000},
         "r1_shifted/encore_learned": {**_blank(), "recovered_per_1000_failures_paise": 150_000},
         "r1_shifted/random_in_horizon": {**_blank(), "recovered_per_1000_failures_paise": 225_000},
+        "r1_shifted/promise_aware_random": {**_blank(), "recovered_per_1000_failures_paise": 220_000},
     }), **PROV)
     out = render_headline_figures(results, _cliff(), test_count=104)
-    assert "3.00x" in out          # 150000 / 50000
-    assert "+50%" in out           # 225000 / 150000
+    assert "4.40x" in out          # shipped 220000 / baseline 50000
+    assert "Shipped policy" in out
+    assert "3.00x" not in out      # the model's ratio is no longer a headline card
+    assert "+50%" in out           # control 225000 / model 150000
     assert "104" in out
     assert "stat-card" in out
     assert ">0 <" in out           # zero violations
@@ -166,3 +169,20 @@ def test_hero_test_count_default_matches_the_actual_suite_size():
         f"`encore web --test-count` defaults to {default} but the suite now has "
         f"{collected} tests. Update the default in cli.py so the hero stays honest."
     )
+
+
+def test_render_page_fills_the_shipped_policy_markers_signed():
+    """The shipped policy's margin over the control is SIGNED: on regimes where
+    promises cannot apply it sits a few percent below the control, and the page
+    must say "-2%" rather than round that up into a win."""
+    from encore.webhtml import render_page
+
+    results = build_results(_full_eval(**{
+        "r1_shifted/fixed_t123": {**_blank(), "recovered_per_1000_failures_paise": 50_000},
+        "r1_shifted/encore_learned": {**_blank(), "recovered_per_1000_failures_paise": 150_000},
+        "r1_shifted/random_in_horizon": {**_blank(), "recovered_per_1000_failures_paise": 225_000},
+        "r1_shifted/promise_aware_random": {**_blank(), "recovered_per_1000_failures_paise": 220_000},
+    }), **PROV)
+    out = render_page("{{SHIPPED_RATIO}} | {{SHIPPED_OVER_RANDOM}} | {{CELLS}}",
+                      results, _cliff(), test_count=1)
+    assert out == "4.40x | -2% | 32"
